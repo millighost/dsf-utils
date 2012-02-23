@@ -28,34 +28,82 @@ def strip_bone_suffix (name):
   else:
     return name
 
+class joint_zone (object):
+  """represent a jointzone like twist[xyz] or joint[xyz].
+  """
+  def __init__ (self, attr):
+    """initialize with a pz3attribute node. Only handles the
+       common parts of all jointzones.
+       @property other if this is a flipped zone contains the name
+         of the other actor (that provides the origin/orientation).
+       @property axis is the axis of the joint (xyz).
+       Poser does not seem to use the center of the joint, but uses the
+         actors origin instead, and so should this object.
+    """
+    self.axis = attr.key[-1].lower ()
+    if 'flipped' in attr.args[-1]:
+      self.other = attr.args[-1]['otherActor'].args[-1]
+    else:
+      self.other = None
+  def create (self, attr):
+    """instantiate a joint based on the exact type.
+       attr must be a pz3attribute.
+    """
+    if attr.key.startswith ('joint'):
+      return joint_zone (attr)
+    elif attr.key.startswith ('twist'):
+      return twist_zone (attr)
+    else:
+      raise KeyError ("bad attribute '%s' for joint_zone" % (attr.key))
+
+class sphere_zone (object):
+  """represent a spherical zone. The representation of it in the actor
+     is not a standalone zone, but always part of another zone.
+  """
+  def __init__ (self, node):
+    """initialize with a pz3attribute for the sphereMatsRaw key
+       of an actor. There must be 4*4 * 2 parameters representing
+       matrices (column-major) for transforming a unit-sphere into
+       the zone.
+    """
+    pass
+class twist_zone (joint_zone):
+  """a twist zone contains two values; start and end for twisting
+     around the axis.
+  """
+  def __init__ (self, attr):
+    """initialize a twist based on pz3attribute node.
+    """
+    super (twist_zone, self).__init__ (node)
+    self.start = attr.args[-1]['startPt']
+    self.end = attr.args[-1]['endPt']
+class bend_zone (joint_zone):
+  """a bendzone stores twist-information based on a set of angles that
+     are interpreted to lie within the joints axis orthogonal plane.
+  """
+  def __init__ (self, node):
+    """initialize a twist based on pz3attribute node.
+    """
+    super (twist_zone, self).__init__ (node)
+    self.angles = attr.args[-1]['angles'].args
+
 class bone (object):
   """a class to represent a single bone of an armature.
      This class should not be blender dependent, but uses mathutils
      to perform some geometric transformations.
+     @property origin: 3d-vector
+     @property endpoint: 3d-vector
+     @property orientation euler-triple(xyz)
+     @property ref_name string (the parameter of the 'actor')
+     @property int_name string (the name of the 'actor' without suffix)
+     @property dis_name string (display-name; the name within the actor)
+     @property reference to parent bone.
+     @property children list of references to child bones.
+     @property rotation_order string 'XYZ' for rot order
+       (determined from channels).
+     @property local_transform (private)
+     @property armature_transform (local to global tf)
   """
-  @classmethod
-  def calc_rotation_order (self, node):
-    """get the rotation order string from node.
-       This looks into the channels-attribute and collects the
-       order of the various rotate[XYZ] channels.
-       @property origin: 3d-vector
-       @property endpoint: 3d-vector
-       @property orientation euler-triple(xyz)
-       @property ref_name string (the parameter of the 'actor')
-       @property int_name string (the name of the 'actor' without suffix)
-       @property dis_name string (display-name; the name within the actor)
-       @property reference to parent bone.
-       @property children list of references to child bones.
-       @property rotation_order string 'XYZ' for rot order
-         (determined from channels).
-       @property local_transform (private)
-       @property armature_transform (local to global tf)
-    """
-    keys = node['channels'].keys ()
-    rotates = [key[-1] for key in keys if key.startswith ('rotate')]
-    order = "".join (rotates)
-    assert (len (order) == 3)
-    return order
   def __init__ (self, node):
     """create a bone from the 'actor'-attribute node.
     """
@@ -76,6 +124,17 @@ class bone (object):
     self.rotation_order = self.calc_rotation_order (node)
     self.local_transform = None # lazy
     self.armature_transform = None # lazy
+  @classmethod
+  def calc_rotation_order (self, node):
+    """get the rotation order string from node.
+       This looks into the channels-attribute and collects the
+       order of the various rotate[XYZ] channels.
+    """
+    keys = node['channels'].keys ()
+    rotates = [key[-1] for key in keys if key.startswith ('rotate')]
+    order = "".join (rotates)
+    assert (len (order) == 3)
+    return order
   def set_parent (self, other_bone):
     """set the parent bone of self.
     """
