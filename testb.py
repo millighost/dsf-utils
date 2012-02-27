@@ -45,12 +45,13 @@ class joint_zone (object):
       self.other = attr.args[-1]['otherActor'].args[-1]
     else:
       self.other = None
+  @classmethod
   def create (self, attr):
     """instantiate a joint based on the exact type.
        attr must be a pz3attribute.
     """
     if attr.key.startswith ('joint'):
-      return joint_zone (attr)
+      return bend_zone (attr)
     elif attr.key.startswith ('twist'):
       return twist_zone (attr)
     else:
@@ -81,10 +82,10 @@ class bend_zone (joint_zone):
   """a bendzone stores twist-information based on a set of angles that
      are interpreted to lie within the joints axis orthogonal plane.
   """
-  def __init__ (self, node):
+  def __init__ (self, attr):
     """initialize a twist based on pz3attribute node.
     """
-    super (twist_zone, self).__init__ (node)
+    super (bend_zone, self).__init__ (attr)
     self.angles = attr.args[-1]['angles'].args
 
 class bone (object):
@@ -327,7 +328,7 @@ class bone (object):
       # apply the transformation and then return the z-value.
       local_coords = transform * coords
       return local_coords[3]
-  def get_weight_angle_func (self, axis):
+  def get_weight_bend_func (self, axis):
     """return a function that, when called with a coordinate in world-space
        returns an angle between 0 and 360 which represents the angle used
        for angular falloff-zones (in local space). The transformed coordinate
