@@ -39,7 +39,7 @@ class geometric_map (weight_map):
   def get_coord_weight (self, coord):
     """default implementation of a weight.
     """
-    raise NotImplementedError ("get_coord_weight must be overwritten")
+    raise NotImplementedError ("get_coord_weight undefined.")
 
 class transform_map (geometric_map):
   """weight map helper for weight maps based on a geometric transformation
@@ -60,7 +60,7 @@ class transform_map (geometric_map):
   def get_local_weight (self, coords):
     """calculate a weight for a vertex that is given in local coordinates.
     """
-    raise NotImplementedError ("subclass needs to define calc_vertex.")
+    raise NotImplementedError ("calc_vertex undefined.")
 
 class angle_map (transform_map):
   """a weight map that applies a transformation to a vertex,
@@ -133,12 +133,12 @@ class sphere_map (geometric_map):
        into the respective ellipsoids.
     """
     super (sphere_map, self).__init__ (**kwarg)
-    self.inner_map = sphere_dist_map (inner)
-    self.outer_map = sphere_dist_map (outer)
+    self.inner_map = sphere_dist_map (inner, **kwarg)
+    self.outer_map = sphere_dist_map (outer, **kwarg)
   def get_weight (self, index):
     """calculate a weight for vertex at the given index.
     """
-    global_coord = self.get_coords (index)
+    global_coord = self.lookup (index)
     # greedily calculate the inner and outer weight; it would be more
     # performant to calculate the inner first and the outer only when
     # needed. something todo when it is too slow.
