@@ -1,4 +1,5 @@
 import types, itertools, array
+import mathutils
 
 class weight_map (object):
   """weight map interface: represents a function that order a weight
@@ -15,13 +16,15 @@ class weight_map (object):
     return 0
   def get_domain (self):
     """return the index range this weight map is defined on.
+       Subclasses should overwrite this function to narrow down the range.
     """
     # default: return an unlimited range (here: up to 1 billion weights).
     return (0, 10 ** 9)
 
 class geometric_map (weight_map):
   """weight map that is based on geometric location of a vertex
-     rather than on an index.
+     rather than on an index. subclasses must implement get_coord_weight
+     which gets called by the implementation of get_weight.
   """
   def __init__ (self, lookup = None):
     """initialize with a lookup function. The lookup function
@@ -29,15 +32,19 @@ class geometric_map (weight_map):
     """
     assert (callable (lookup))
     self.lookup = lookup
-  def get_coords (self, index):
-    """return the coordinates of the vertex.
+  def get_weight (self, index):
+    """gets the coordinates of vertex index and calls get_coord_weight.
     """
-    return self.lookup (index)
+    return self.get_coord_weight (self.lookup (index))
+  def get_coord_weight (self, coord):
+    """default implementation of a weight.
+    """
+    raise NotImplementedError ("get_coord_weight must be overwritten")
 
 class transform_map (geometric_map):
   """weight map helper for weight maps based on a geometric transformation
-     to calculate a weight. implements the get-weight function by calling
-     the calc-weight function to be implemented by subclasses.
+     to calculate a weight. implements the get-coord-weight function by calling
+     the get_local_weight function to be implemented by subclasses.
   """
   def __init__ (self, transformation = None, lookup = None):
     """initialize with a transformation which transforms
@@ -46,20 +53,11 @@ class transform_map (geometric_map):
     super (transform_map, self).__init__ (lookup = lookup)
     assert (callable (transformation))
     self.transformation = transformation
-  def get_local_coords (self, index):
-    """return the transformed coordinates of the vector with index index
-       after applying transformation.
+  def get_coord_weight (self, coord):
+    """transform coord and call the get_local_weight function on self.
     """
-    global_coords = self.get_coords (index)
-    local_coords = self.transformation (global_coords)
-    return local_coords
-  def get_weight (self, index):
-    """calculate the weight for the vertex at the given index by
-       calling the subclasses calc-weight function.
-    """
-    local_coords = self.get_local_coords (index)
-    return self.calc_weight (local_coords)
-  def calc_weight (self, coords):
+    return self.get_local_weight (self.transformation (coord))
+  def get_local_weight (self, coords):
     """calculate a weight for a vertex that is given in local coordinates.
     """
     raise NotImplementedError ("subclass needs to define calc_vertex.")
@@ -77,7 +75,7 @@ class angle_map (transform_map):
     """
     super (angle_map, self).__init__ (self, **kwarg)
     self.angles = angles
-  def calc_weight (self, coords):
+  def get_local_weight (self, coords):
     """calculate the weight for the vertex with the given coordinates.
        coords are a position in local space.
     """
@@ -98,13 +96,32 @@ class zdist_map (transform_map):
     super (zdist_map, self).__init__ (**kwarg)
     self.zmin = zmin
     self.zmax = zmax
-  def calc_weight (self, coords):
+  def get_local_weight (self, coords):
     """calculate the weight for the vertex with the given coordinates.
        coords are the vertex position in local space.
     """
     # todo
     return 0
   pass
+
+class sphere_dist_map (transform_map):
+  """weight map that uses the inclusion of a vertex within a ellipsoid
+     to return a weight between 0 (in the center of the ellipsoid) and
+     infinity (somewhere outside the ellipsoid). The exact border of
+     the ellipsoid gets weight 1. This is basically the relative distance
+     to the center.
+  """
+  def __init__ (self, sphere_mat, **kwarg):
+    """initialize a sphere_dist_map with a given matrix sphere_mat which
+       transforms the unit sphere into an ellipsoid in global space.
+    """
+    sphere_inv_func = sphere_mat.inverted ().__mul__
+    super (sphere_dist_map, self).__init__\
+        (transformation = sphere_mat.inverted ().__mul__, **kwarg)
+  def get_local_weight (self, coord):
+    """return how near coord is to the center of the ellipsoid.
+    """
+    return coord.length
 
 class sphere_map (geometric_map):
   """weight map implementation that uses an inclusion/exclusion-sphere
@@ -116,14 +133,25 @@ class sphere_map (geometric_map):
        into the respective ellipsoids.
     """
     super (sphere_map, self).__init__ (**kwarg)
-    self.inner = inner
-    self.outer = outer
+    self.inner_map = sphere_dist_map (inner)
+    self.outer_map = sphere_dist_map (outer)
   def get_weight (self, index):
     """calculate a weight for vertex at the given index.
     """
-    # todo
-    global_coords = self.get_coords (index)
-  pass
+    global_coord = self.get_coords (index)
+    # greedily calculate the inner and outer weight; it would be more
+    # performant to calculate the inner first and the outer only when
+    # needed. something todo when it is too slow.
+    inner_weight = self.inner_map.get_coord_weight (global_coord)
+    outer_weight = self.outer_map.get_coord_weight (global_coord)
+    if inner_weight <= 1:
+      return 1.0
+    elif outer_weight > 1:
+      return 0
+    else:
+      # todo: do some interpolation here, perhaps use the relation
+      # between inner and outer scaled to [0, 1]
+      return 0.5
 
 class sparse_table (object):
   """class to implement index lookup based on a dictionary.
