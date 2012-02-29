@@ -1,4 +1,4 @@
-import types, itertools, array
+import types, itertools, array, functools
 import mathutils
 
 class weight_map (object):
@@ -153,6 +153,35 @@ class sphere_map (geometric_map):
       # between inner and outer scaled to [0, 1]
       return 0.5
 
+class group_map (weight_map):
+  """weight map implementation where each vertex only has a weight
+     of 1 or 0 (i.e. contained or not).
+  """
+  def __init__ (self, idxs, **kwarg):
+    """initialize with a list of vertex numbers idxs.
+    """
+    super (group_map, self).__init__ (**kwarg)
+    idxs_list = list (idxs)
+    idxs_list.sort ()
+    self.idxs = array ('i', idxs_list)
+    self.min = self.idxs[0]
+    self.max = self.idxs[-1] + 1
+  def get_weight (self, index):
+    """check for containment in the group.
+    """
+    if self.min <= index < self.max:
+      idxidx = bisect.bisect_left (self.idxs, index)
+      if self.idxs[idxidx] == index:
+        return 1
+      else:
+        return 0
+    else:
+      return 0
+  def get_domain (self):
+    """return the minimum and maximum vertex number of the group.
+    """
+    return (self.min, self.max)
+    
 class sparse_table (object):
   """class to implement index lookup based on a dictionary.
   """
@@ -243,3 +272,53 @@ class table_map (weight_map):
     """return the value for the given index.
     """
     return self.data.get_value (index)
+
+def multiply_map (weight_map):
+  """define a weight map by multiplying multiple maps.
+  """
+  def __init__ (self, *arg, **kwarg):
+    """takes a variable number of arguments, each is a weight-map.
+    """
+    super (multiply_map, self).__init__ (**kwarg)
+    self.submaps = list (arg)
+    (self.min, self.max) = self.submaps[0].get_domain ()
+    for submap in self.submaps[1:]:
+      (submin, submax) = submap.get_domain ()
+      self.min = max (self.min, submin)
+      self.max = min (self.max, submax)
+  def get_weight (self, index):
+    """return the product of all weights.
+    """
+    if self.min <= index < self.max:
+      return functools.reduce\
+          (operator.mul, map (lambda sub: sub.get_weight (index)))
+    else:
+      return 0
+  def get_domain (self):
+    """return the intersection of all subdomains.
+    """
+    return (self.min, self.max)
+
+def average_map (weight_map):
+  """define a weight map by averaging multiple maps.
+  """
+  def __init__ (self, *arg, **kwarg):
+    """takes a variable number of arguments, each is a weight-map.
+    """
+    super (average_map, self).__init__ (**kwarg)
+    self.submaps = list (arg)
+    (self.min, self.max) = self.submaps[0].get_domain ()
+    for submap in self.submaps[1:]:
+      (submin, submax) = submap.get_domain ()
+      self.min = min (self.min, submin)
+      self.max = max (self.max, submax)
+  def get_weight (self, index):
+    """return the average of all weights.
+    """
+    added = functools.reduce\
+        (operator.add, map (lambda sub: sub.get_weight (index)))
+    return added / len (self.submaps)
+  def get_domain (self):
+    """return the union of all subdomains.
+    """
+    return (self.min, self.max)
