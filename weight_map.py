@@ -59,6 +59,7 @@ class transform_map (geometric_map):
     return self.get_local_weight (self.transformation (coord))
   def get_local_weight (self, coords):
     """calculate a weight for a vertex that is given in local coordinates.
+       subclasses need to overwrite this method.
     """
     raise NotImplementedError ("calc_vertex undefined.")
 
@@ -79,8 +80,12 @@ class angle_map (transform_map):
     """calculate the weight for the vertex with the given coordinates.
        coords are a position in local space.
     """
-    # todo
-    return 0
+    angle = math.degrees (math.atan2 (coords[1], coords[0]))
+    # todo: translate the angle to a weight
+    if angle < 0:
+      return angle + 360
+    else:
+      return angle
   pass
 
 class zdist_map (transform_map):
@@ -100,9 +105,13 @@ class zdist_map (transform_map):
     """calculate the weight for the vertex with the given coordinates.
        coords are the vertex position in local space.
     """
-    # todo
-    return 0
-  pass
+    zdist = coords[2]
+    if zdist < self.zmin:
+      return 0
+    elif self.zmax < zdist:
+      return 1
+    else:
+      return (zdist - zmin) / (zmax - zmin)
 
 class sphere_dist_map (transform_map):
   """weight map that uses the inclusion of a vertex within a ellipsoid
@@ -281,8 +290,8 @@ def multiply_map (weight_map):
     """
     super (multiply_map, self).__init__ (**kwarg)
     self.submaps = list (arg)
-    (self.min, self.max) = self.submaps[0].get_domain ()
-    for submap in self.submaps[1:]:
+    (self.min, self.max) = super (multiply_map, self).get_domain ()
+    for submap in self.submaps:
       (submin, submax) = submap.get_domain ()
       self.min = max (self.min, submin)
       self.max = min (self.max, submax)
@@ -307,8 +316,8 @@ def average_map (weight_map):
     """
     super (average_map, self).__init__ (**kwarg)
     self.submaps = list (arg)
-    (self.min, self.max) = self.submaps[0].get_domain ()
-    for submap in self.submaps[1:]:
+    (self.min, self.max) = super (average_map, self).get_domain ()
+    for submap in self.submaps:
       (submin, submax) = submap.get_domain ()
       self.min = min (self.min, submin)
       self.max = max (self.max, submax)
