@@ -1,14 +1,14 @@
 import sys, os.path, logging
 import bpy
-from bpy.props import BoolProperty, StringProperty
+from bpy.props import StringProperty
 
-import dsf.dsf_morph_load
-import dsf.dsf_skey_define
+from dsf.dsf_uvset_load import dsf_uvset_load
+from dsf.dsf_uvset_define import dsf_uvset_define
 
-log = logging.getLogger ('import_morph')
+log = logging.getLogger ('import_uvset')
 
 bl_info = {
-  'name': 'import dsf morph',
+  'name': 'import dsf uvset',
   'description': 'import a daz dsf file',
   'author': 'millighost',
   'version': (1, 0),
@@ -18,23 +18,22 @@ bl_info = {
   'wiki_url': 'http://nonexistent',
 }
 
-def import_dsf_morph_file (filename, context):
-  """load the dsf-file and create a shapekey.
+def import_dsf_uvset_file (filename, context):
+  """load the dsf-file and insert it as a blender uvset.
   """
   # parse the dsf-file.
-  mod_lib = dsf.dsf_morph_load.read_dsf_data (filename)
-  # apply the shapekeys from the modifier lib to the current object.
+  uvlib = dsf_uvset_load.read_dsf_data (filename)
   obj = context.active_object
-  dsf.dsf_skey_define.define_shapekeys (obj, mod_lib)
+  dsf_uvset_define.define_uvset (obj, uvlib)
 
 # the rest defines the gui and the blender operator
-class import_dsf_morph (bpy.types.Operator):
+class import_dsf_uvset (bpy.types.Operator):
   # the doc text is displayed in the tooltip of the menu entry.
   """Load a daz studio 4 dsf file."""
   # the bl_label is displayed in the operator-menu (with space-KEY).
-  bl_label = 'import dsf-morph'
+  bl_label = 'import dsf-uvset'
   # the bl_idname member is used by blender to call this class.
-  bl_idname = 'import.dsfmorph'
+  bl_idname = 'import.dsfuvset'
   # the filepath seems to be hidden magic; the file-selector
   # menu places the chosen filename-string into it.
   # (changes sometimes; look for path/dirname/filepath)
@@ -48,7 +47,7 @@ class import_dsf_morph (bpy.types.Operator):
        called after the menu entry for the file is selected."""
     # call the main import function. This function should work
     # independent of this context-manager/operator logic.
-    import_dsf_morph_file (self.properties.filepath, context)
+    import_dsf_uvset_file (self.properties.filepath, context)
     return { 'FINISHED' }
   def invoke (self, context, event):
     """The invoke function should be called when the menu-entry for
@@ -61,15 +60,15 @@ def menu_func (self, context):
   """display the menu entry for calling the importer."""
   # the first parameter is the operator to call (by its bl_idname),
   # the text parameter is displayed in the menu.
-  self.layout.operator (import_dsf_morph.bl_idname, text = 'dsf-morph (.dsf)')
+  self.layout.operator (import_dsf_uvset.bl_idname, text = 'dsf-uvset (.dsf)')
 
 def register ():
   """add an operator for importing dsf-files and
      registers a menu function for it."""
-  bpy.utils.register_class (import_dsf_morph)
+  bpy.utils.register_class (import_dsf_uvset)
   bpy.types.INFO_MT_file_import.append (menu_func)
 
 def unregister ():
   """remove the operator for importing dsf-files."""
-  bpy.utils.unregister_class (import_dsf_morph)
+  bpy.utils.unregister_class (import_dsf_uvset)
   bpy.types.INFO_MT_file_import.remove (menu_func)

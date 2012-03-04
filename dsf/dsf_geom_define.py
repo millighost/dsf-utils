@@ -114,6 +114,7 @@ class dsf_geom_define (object):
   def define_model (self,  geom, use_mat = True):
     """build a blender object from the model.
        kwarg use_mat: do not create material if already exists.
+       returns the created object.
     """
     # insert the vertices and basic faces into the model.
     mesh_obj = self.define_geom ('Mesh', geom)

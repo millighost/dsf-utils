@@ -42,7 +42,7 @@ def get_parser_flags (props):
 
 def import_dsf_file (filename, props):
   """load the dsf-file and create a mesh. Props is a list containing
-     flags to be set.
+     flags to be set. returns the created object.
      groups: define vertex groups.
      materials: assign material indexes.
      use_mat: use existing materials with same name.
@@ -51,7 +51,8 @@ def import_dsf_file (filename, props):
   # parse the dsf-file.
   geom = dsf_geom_load.load_file (filename)
   # insert the quad-model into blender.
-  dsf_geom_define.define_model (geom, use_mat = 'use_mat' in props)
+  obj = dsf_geom_define.define_model (geom, use_mat = 'use_mat' in props)
+  return obj
 
 # the rest defines the gui and the blender operator
 class import_dsf (bpy.types.Operator):
