@@ -1,6 +1,13 @@
+# union module for inclusion of all dsf-related modules into
+# one directory. This should be the only module directly
+# included/executed from blender.
+import logging
+
 import dsf.dsf_geom_import
 import dsf.dsf_morph_import
 import dsf.dsf_morph_export
+
+logging.basicConfig (level = logging.INFO)
 
 bl_info = {
   'name': 'dsf-utils',

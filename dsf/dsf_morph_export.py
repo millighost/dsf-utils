@@ -78,5 +78,3 @@ def register ():
 def unregister ():
   bpy.utils.unregister_class (export_dsf_morph)
   bpy.types.INFO_MT_file_export.remove (menu_func)
-
-logging.basicConfig (level = logging.INFO)

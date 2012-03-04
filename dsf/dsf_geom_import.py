@@ -121,5 +121,3 @@ def unregister ():
   """remove the operator for importing dsf-files."""
   bpy.utils.unregister_class (import_dsf)
   bpy.types.INFO_MT_file_import.remove (menu_func)
-
-logging.basicConfig (level = logging.INFO)
