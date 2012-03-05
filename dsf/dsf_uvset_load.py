@@ -1,4 +1,5 @@
-import json, logging, random
+import json, logging, random, itertools
+from array import array
 
 log = logging.getLogger ('import_uvset')
 
@@ -18,6 +19,16 @@ class dsf_uvset (object):
        from the uv-set-library in the dsf.
     """
     self.name = uvlib['id']
+    if 'polygon_vertex_indices' in uvlib:
+      # stuff all border uvs into a map[face,vert->uv]
+      self.separate = {
+        (t[0], t[1]): t[2] for t in uvlib['polygon_vertex_indices']
+      }
+    else:
+      self.separate = { }
+    self.vertex_index = array ('i', uvlib['vertex_indices'])
+    self.uvs = array\
+        ('f', itertools.chain.from_iterable (uvlib['uvs']['values']))
   def get_name (self):
     """returns the name of the uvset.
     """
@@ -26,7 +37,15 @@ class dsf_uvset (object):
     """return a list of 2*len(verts) numbers representing
        the uv-coordinates of the given face.
     """
-    return [random.random ()] * 2 * len (verts)
+    uvlist = []
+    for v in verts:
+      if (face, v) in self.separate:
+        uvidx = self.separate[(face, v)]
+      else:
+        uvidx = v
+      uvlist.append (self.uvs[2*uvidx])
+      uvlist.append (self.uvs[2*uvidx+1])
+    return uvlist
 
 class dsf_uvset_load (object):
   """class to load data for definition of uvsets.
