@@ -3,12 +3,23 @@
 # included/executed from blender.
 import logging
 
-import dsf.dsf_geom_import
-import dsf.dsf_morph_import
-import dsf.dsf_uvset_import
-import dsf.dsf_morph_export
-
 logging.basicConfig (level = logging.INFO)
+log = logging.getLogger ('dsf')
+
+try:
+  import dsf.dsf_geom_import
+  import dsf.dsf_morph_import
+  import dsf.dsf_uvset_import
+  import dsf.dsf_morph_export
+except ImportError as e:
+  # if the error is something like 'no module named bpy', this
+  # file is not included from within blender. Do not abort in this
+  # case, because parts of this module are still useful.
+  if str (e).index ('bpy') >= 0:
+    log.warn ("import error ignored: %s", e)
+  else:
+    raise
+
 
 bl_info = {
   'name': 'dsf-utils',

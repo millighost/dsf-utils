@@ -26,6 +26,7 @@ class dsf_uvset (object):
       }
     else:
       self.separate = { }
+    # todo: check this stuff with the vertex_indices (unused so far)...
     self.vertex_index = array ('i', uvlib['vertex_indices'])
     self.uvs = array\
         ('f', itertools.chain.from_iterable (uvlib['uvs']['values']))
