@@ -21,34 +21,52 @@ class remove_unused_mats (bpy.types.Operator):
   def __init__ (self, *arg, **kwarg):
     super (remove_unused_mats, self).__init__ (*arg, **kwarg)
   def execute (self, ctx):
-    for obj in [obj for obj in ctx.scene.objects if obj.select]:
+    for obj in [obj for obj in ctx.scene.objects
+                if obj.select and obj.type == 'MESH']:
       self.remove_unused_mats_obj (obj)
     return {'FINISHED'}
   @classmethod
-  def get_used_mat_indices (self, obj):
+  def get_used_mat_indices_bpy (self, obj):
     """return a set of used material indices from the object obj.
-       @todo: this currently works only for material indices referenced by
-       mesh-data faces.
+       this is the implementation for bpy-style meshes.
     """
     mats = set ()
+    for face in obj.data.faces:
+      mats.add (face.material_index)
+    return mats
+  @classmethod
+  def get_used_mat_indices_bmesh (self, obj):
+    """return a set of used material indices from the object obj.
+       this is the implementation for bmesh-style meshes.
+    """
+    mats = set ()
+    import bmesh
+    bm = bmesh.from_edit_mesh (obj.data)
+    for face in bm.faces:
+      mats.add (face.material_index)
+    return mats
+  @classmethod
+  def get_used_mat_indices (self, obj):
     if obj.type == 'MESH':
-      for face in obj.data.faces:
-        mats.add (face.material_index)
+      return self.get_used_mat_indices_bmesh (obj)
     else:
       # @todo: if this is not a mesh, determine the used indices somehow else.
-      mats = set (range (len (obj.material_slots)))
-    return mats
+      return set (range (len (obj.material_slots)))
   @classmethod
   def remove_unused_mats_obj (self, obj):
     """remove all unused material slots of a single object.
     """
+    bpy.context.scene.objects.active = obj
+    bpy.ops.object.mode_set (mode = 'EDIT')
     keep = self.compress_material_slots (obj)
+    bpy.ops.object.mode_set (mode = 'OBJECT')
     self.remove_unused_slots (obj, keep = keep)
   @classmethod
   def compress_material_slots (self, obj):
     """reassign all material indices, so that they are in the range 0 to N-1,
        with N being the number of used materials. This function returns the
        list of used material indices after its application.
+       This function must be called in EDIT mode.
     """
     used_indices = list (self.get_used_mat_indices (obj))
     used_indices.sort ()
@@ -56,7 +74,14 @@ class remove_unused_mats (bpy.types.Operator):
     for (new_idx, old_idx) in enumerate (used_indices):
       translate[old_idx] = new_idx
       obj.material_slots[new_idx].material = obj.material_slots[old_idx].material
-    for face in obj.data.faces:
+    if True:
+      import bmesh
+      bm = bmesh.from_edit_mesh (obj.data)
+      face_list = bm.faces
+    else:
+      # old version for bpy meshes
+      face_list = obj.data.faces
+    for face in face_list:
       old_idx = face.material_index
       new_idx = translate[old_idx]
       if old_idx != new_idx:
@@ -72,6 +97,7 @@ class remove_unused_mats (bpy.types.Operator):
        contains a set of all material indices not to remove. If keep is
        None, it is calculated from the mesh-data. Either way, the material
        indices are renumbered after this function.
+       This function must be called in OBJECT mode.
     """
     if keep is None:
       keep = self.get_used_mat_indices (obj)
