@@ -21,8 +21,7 @@ class remove_unused_mats (bpy.types.Operator):
   def __init__ (self, *arg, **kwarg):
     super (remove_unused_mats, self).__init__ (*arg, **kwarg)
   def execute (self, ctx):
-    for obj in [obj for obj in ctx.scene.objects
-                if obj.select and obj.type == 'MESH']:
+    for obj in [obj for obj in ctx.scene.objects if obj.select]:
       self.remove_unused_mats_obj (obj)
     return {'FINISHED'}
   @classmethod
