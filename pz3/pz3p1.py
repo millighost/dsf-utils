@@ -37,6 +37,10 @@ class pz3attribute (object):
        Corresponds to the encode method.
     """
     return pz3attribute (obj['key'], obj['args'])
+  def name (self):
+    """an alias for the first argument.
+    """
+    return self.args[0]
   def add_arg (self, arg):
     """add an additional argument to the arguments.
     """
