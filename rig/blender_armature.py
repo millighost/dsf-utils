@@ -250,3 +250,20 @@ class bone (object):
         return angle
     return transform_func
 
+class armature (object):
+  """armature that wraps an input armature with an object that
+     can be used to define a blender armature from it.
+  """
+  def __init__ (self, proxy):
+    """proxy is the input armature.
+    """
+    self.proxy = proxy
+  def get_bone (self, name):
+    """return the bone object with the given name.
+    """
+    pass
+  def get_children (self, parent):
+    """return the names of all bones that are a child of named parent.
+       if parent is None returns the root bones.
+    """
+    pass

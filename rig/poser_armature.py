@@ -15,7 +15,7 @@ class bone (object):
   def get_origin (self):
     """return the head of self (the origin).
     """
-    return self.obj['origin']
+    return self.obj['origin'].args
   def get_id (self):
     """return the reference name of self.
     """
@@ -24,7 +24,7 @@ class bone (object):
     """return the orientation of self.
        orientation is the euler-rotation of the bone in fixed XYZ order.
     """
-    return self.obj['orientation']
+    return self.obj['orientation'].args
   def get_rotation_order (self):
     """return the rotation order of self given as a permutation of 'xyz'
     """
@@ -44,7 +44,7 @@ class bone (object):
        defined.
     """
     if 'endPoint' in self.obj:
-      return self.obj['endPoint']
+      return self.obj['endPoint'].args
     else:
       return None
 
@@ -56,17 +56,20 @@ class bone (object):
     'id': get_id,
     'endpoint': get_endpoint,
   }
-  def get_attr (self, name):
+  def get (self, name):
     """return the named attribute from self.
        this just calls the associated getter function.
     """
     if name in self.attr_mapping:
-      return self.attr_mapping[name] ()
+      return self.attr_mapping[name] (self)
     else:
       raise KeyError ("unknown key '%s'" % (name))
 
 class armature (object):
   """proxy object for an armature defined from a pz3 file.
+     provides essentially this functionality:
+     - can get bones by name.
+     - can identify roots.
   """
   def __init__ (self, pz3obj):
     """initialize an armature proxy from the given pz3 data object.
@@ -83,16 +86,18 @@ class armature (object):
       if 'name' in actor.child ():
         proxy = bone (actor)
         self.bone_dic[proxy.get_id ()] = proxy
-  def get_root_id (self):
-    """return the refname of the root actor.
+  def get_children (self, parent):
+    """return all bones that have parent for a parent.
+       if parent is None returns the root bones.
     """
-    return self.figure['root'][0]
-  def get_bone (self, name):
-    """return the named actor as a bone proxy.
-    """
-    return self.bone_dic[name]
-  def get_root_bone (self):
-    """return the root of the figure as a bone.
-    """
-    root_id = self.get_root_id ()
-    return self.get_bone (root_id)
+    if isinstance (parent, bone):
+      parent_name = parent.get ('id')
+    else:
+      parent_name = parent
+    def is_child (bone):
+      if parent is None:
+        return bone.get ('parent') not in self.bone_dic
+      else:
+        return bone.get ('parent') == parent_name
+    children = [b for b in self.bone_dic.values () if is_child (b)]
+    return children

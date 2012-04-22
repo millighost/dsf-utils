@@ -410,6 +410,42 @@ def create_blender_armature (name):
   armdat.show_axes = True
   return armdat
 
+def make_armature_bone_transform (orient, origin):
+  """create the transformation for the bone that moves it into its
+     position and orients it according to orientation.
+  """
+  xyz_angles = [math.radians (angle) for angle in orient]
+  orient_tf = mathutils.Euler (xyz_angles, 'XYZ').to_matrix ().to_4x4 ()
+  translate_tf = mathutils.matrix.Translation (origin)
+  transform = translate_tf * orient_tf
+  return transform
+
+def insert_bone (si_bone, armdat):
+  """insert the bone object into the armature data armdat and returns
+     the created blender-bone.
+     si_bone must provide these attributes:
+     orientation, origin - basic position data of the bone used to create
+       the transformation of the bone in armature-space.
+  """
+  b_bone = armdat.edit_bones.new (name = si_bone.get_name ())
+  orient = si_bone.get_attr ('orientation')
+  origin = si_bone.get_attr ('origin')
+  # create an initial orientation by setting the tail of
+  # the bone to 0,1,0. This leaves the bone pointing in the y-orientation,
+  # so the local space is the same as the global space.
+  b_bone.head = (0, 0, 0)
+  b_bone.tail = (0, 1, 0)
+  transform = make_armature_bone_transform (orient, origin)
+  b_bone.transform (transform)
+  return b_bone
+  # armature_local_transform = si_bone.get_local_to_global_tf ()
+  # rename_mat = si_bone.order_rotation ()
+  # pre_orient_mat = si_bone.calc_pre_trans ()
+  # orient_mat = si_bone.get_local_to_global_rot ()
+  # b_bone.transform (orient_mat * pre_orient_mat)
+  # b_bone.translate (si_bone.origin)
+  # bone_mapping[si_bone.ref_name] = b_bone
+  
 def insert_bones (si_bones, armdat):
   """insert the list of bones into the given armature-data block.
      Returns a mapping from bone-name to the corresponding bone.
@@ -417,16 +453,8 @@ def insert_bones (si_bones, armdat):
   """
   bone_mapping = dict ()
   for si_bone in si_bones:
-    b_bone = armdat.edit_bones.new (name = si_bone.int_name)
-    b_bone.head = (0, 0, 0)
-    b_bone.tail = (0, 1, 0)
-    armature_local_transform = si_bone.get_local_to_global_tf ()
-    rename_mat = si_bone.order_rotation ()
-    pre_orient_mat = si_bone.calc_pre_trans ()
-    orient_mat = si_bone.get_local_to_global_rot ()
-    b_bone.transform (orient_mat * pre_orient_mat)
-    b_bone.translate (si_bone.origin)
-    bone_mapping[si_bone.ref_name] = b_bone
+    b_bone = insert_bone (si_bone)
+    bone_mapping[b_bone.name] = b_bone
   return bone_mapping
 
 def build_hierarchy (si_arm, bone_map):
@@ -448,7 +476,7 @@ def define_armature (si_arm):
   """
   armdat = create_blender_armature ('imported-arm')
   bmap = insert_bones (si_arm.bone_by_name.values (), armdat)
-  build_hierarchy (si_arm, bmap)
+  # build_hierarchy (si_arm, bmap)
 
 class pz3scene (object):
   """represent the contents of a pz3-file (or cr2 file in this case).
