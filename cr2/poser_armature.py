@@ -1,4 +1,4 @@
-import operator, math
+import operator, math, re
 
 class bone (object):
   """proxy class for extracting properties of a pz3 actor block.
@@ -21,9 +21,14 @@ class bone (object):
     """
     return self.obj['origin'].args
   def get_id (self):
-    """return the reference name of self.
+    """return the reference name of self. This removes the ':<NUM>' suffix
+       from the name given in the cr2file.
     """
-    return self.id
+    mat = re.match ('^(.*):(\\d+)$', self.id)
+    if mat is None:
+      return self.id
+    else:
+      return mat.group (1)
   def get_orientation (self):
     """return the orientation of self.
        orientation is the euler-rotation of the bone in fixed XYZ order.
