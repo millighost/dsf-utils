@@ -2,12 +2,12 @@ import mathutils
 import bpy
 import math
 
-def create_blender_armature (name):
+def create_blender_armature (name, ctx):
   """create an empty armature data and object, put the armature
      into edit-mode and return the data object. The armature
      object will be the active object.
   """
-  scene = bpy.context.scene
+  scene = ctx.scene
   armdat = bpy.data.armatures.new (name = name)
   armobj = bpy.data.objects.new (name = name, object_data = armdat)
   scene.objects.link (armobj)
@@ -39,7 +39,7 @@ def insert_bone (si_bone, armdat):
   # the bone to 0,1,0. This leaves the bone pointing in the y-orientation,
   # so the local space is the same as the global space.
   b_bone.head = (0, 0, 0)
-  b_bone.tail = (0, 1, 0)
+  b_bone.tail = (0, si_bone.get ('length'), 0)
   transform_bone (orient, origin, b_bone)
   return b_bone
   
@@ -75,11 +75,12 @@ def configure_bones (bone_mapping, armobj):
     order = si_bone.get ('rotation_order')
     pbone.rotation_mode = order
 
-def define_armature (si_arm):
+def define_armature (si_arm, ctx):
   """create a blender-armature object from the given armature-data.
      blender-function.
+     ctx is the context for defining the armature in.
   """
-  armobj = create_blender_armature ('imported-arm')
+  armobj = create_blender_armature ('imported-arm', ctx)
   bpy.ops.object.mode_set (mode = 'EDIT')
   bone_map = insert_bones (si_arm, armobj.data)
   bpy.ops.object.mode_set (mode = 'OBJECT')

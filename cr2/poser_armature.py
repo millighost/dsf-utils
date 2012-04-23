@@ -1,3 +1,4 @@
+import operator, math
 
 class bone (object):
   """proxy class for extracting properties of a pz3 actor block.
@@ -5,12 +6,15 @@ class bone (object):
      name of the other attribute, but some might do something more
      (like calculating the rotation order).
   """
-  def __init__ (self, actor_attr):
+  def __init__ (self, actor_attr, arm):
     """initialize a bone from the given pz3 attribute node.
        actor_attr must be the attribute that actually holds the data.
+       arm is a reference to the armature; for some attributes (length)
+       other bones need to be consulted.
     """
     self.obj = actor_attr.child ()
     self.id = actor_attr.name ()
+    self.arm = arm
 
   def get_origin (self):
     """return the head of self (the origin).
@@ -36,9 +40,13 @@ class bone (object):
     assert (len (order) == 3)
     return order
   def get_parent (self):
-    """return the ref-name of the parent actor of this actor.
+    """return the ref-name of the parent actor of this actor. This checks
+       first for a nonInkyParent and then for a parent.
     """
-    return self.obj['parent'][0]
+    if 'nonInkyParent' in self.obj:
+      return self.obj['nonInkyParent'][0]
+    else:
+      return self.obj['parent'][0]
   def get_endpoint (self):
     """return the endpoint (tail) of self. return None if no endpoint is
        defined.
@@ -47,12 +55,25 @@ class bone (object):
       return self.obj['endPoint'].args
     else:
       return None
+  def get_length (self):
+    """return the approximate length of the bone.
+       Mainly for display purposes; some guesswork is done here to get
+       the size from either the endPoint, the child or the children positions.
+    """
+    endp = self.get_endpoint ()
+    begp = self.get_origin ()
+    norm = math.sqrt (sum ([d ** 2 for d in map (operator.sub, endp, begp)]))
+    if norm > 0 and norm < 10:
+      return norm
+    else:
+      return 1
 
   attr_mapping = {
     'origin': get_origin,
     'orientation': get_orientation,
     'rotation_order': get_rotation_order,
     'parent': get_parent,
+    'length': get_length,
     'id': get_id,
     'endpoint': get_endpoint,
   }
@@ -84,7 +105,7 @@ class armature (object):
       # and the actual definitions. Filter out the definitions
       # by checking for a 'name' attribute.
       if 'name' in actor.child ():
-        proxy = bone (actor)
+        proxy = bone (actor, self)
         self.bone_dic[proxy.get_id ()] = proxy
   def get_children (self, parent):
     """return all bones that have parent for a parent.
