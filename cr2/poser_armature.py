@@ -16,6 +16,16 @@ class bone (object):
     self.id = actor_attr.name ()
     self.arm = arm
 
+  @classmethod
+  def strip_name (self, name):
+    """strip the numeric suffix from a name.
+    """
+    mat = re.match ('^(.*):(\\d+)$', name)
+    if mat is None:
+      return name
+    else:
+      return mat.group (1)
+
   def get_origin (self):
     """return the head of self (the origin).
     """
@@ -24,11 +34,7 @@ class bone (object):
     """return the reference name of self. This removes the ':<NUM>' suffix
        from the name given in the cr2file.
     """
-    mat = re.match ('^(.*):(\\d+)$', self.id)
-    if mat is None:
-      return self.id
-    else:
-      return mat.group (1)
+    return self.strip_name (self.id)
   def get_orientation (self):
     """return the orientation of self.
        orientation is the euler-rotation of the bone in fixed XYZ order.
@@ -49,9 +55,10 @@ class bone (object):
        first for a nonInkyParent and then for a parent.
     """
     if 'nonInkyParent' in self.obj:
-      return self.obj['nonInkyParent'][0]
+      pname = self.obj['nonInkyParent'][0]
     else:
-      return self.obj['parent'][0]
+      pname = self.obj['parent'][0]
+    return self.strip_name (pname)
   def get_endpoint (self):
     """return the endpoint (tail) of self. return None if no endpoint is
        defined.

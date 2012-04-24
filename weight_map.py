@@ -1,5 +1,4 @@
 import types, itertools, array, functools
-import mathutils
 
 class weight_map (object):
   """weight map interface: represents a function that order a weight
