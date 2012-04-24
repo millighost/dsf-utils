@@ -1,8 +1,8 @@
 import logging
 import pz3.input
 
-import cr2.poser_armature
-import cr2.rig_define
+import rig.poser_armature
+import rig.rig_define
 
 log = logging.getLogger ("import_rig")
 
@@ -11,5 +11,5 @@ def import_cr2_rig (pathname, ctx):
      ctx is the blender context.
   """
   pdata = pz3.input.read_pz3_data (pathname)
-  si_arm = cr2.poser_armature.armature (pdata[0])
-  cr2.rig_define.define_armature (si_arm, ctx)
+  si_arm = rig.poser_armature.armature (pdata[0])
+  rig.rig_define.define_armature (si_arm, ctx)

@@ -5,7 +5,7 @@ logging.basicConfig (level = logging.INFO)
 log = logging.getLogger ('cr2')
 
 try:
-  import cr2.cr2_armature_import
+  import rig.cr2_armature_import
 except ImportError as e:
   # if the error is something like 'no module named bpy', this
   # file is not included from within blender. Do not abort in this

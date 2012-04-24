@@ -2,7 +2,7 @@ import sys, os.path, logging
 import bpy
 from bpy.props import StringProperty
 
-import cr2.import_rig
+import rig.import_rig
 
 log = logging.getLogger ('import_cr2_arm')
 
@@ -38,7 +38,7 @@ class import_cr2_armature (bpy.types.Operator):
        called after the menu entry for the file is selected."""
     # call the main import function. This function should work
     # independent of this context-manager/operator logic.
-    cr2.import_rig.import_cr2_rig (self.properties.filepath, context)
+    rig.import_rig.import_cr2_rig (self.properties.filepath, context)
     return { 'FINISHED' }
   def invoke (self, context, event):
     """The invoke function should be called when the menu-entry for
