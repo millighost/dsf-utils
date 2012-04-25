@@ -1,4 +1,4 @@
-import types, itertools, array, functools
+import types, itertools, array, functools, bisect, math
 
 class weight_map (object):
   """weight map interface: represents a function that order a weight
@@ -65,27 +65,44 @@ class transform_map (geometric_map):
 class angle_map (transform_map):
   """a weight map that applies a transformation to a vertex,
      projects it into the xy-plane and uses the angle between the
-     x-axis and the vector to create a weight-value.
+     x-axis and the vector (positive direction) to create a weight-value.
   """
-  def __init__ (self, angle, **kwarg):
-    """ranges contains 4 numbers:
-      (angle[0], angle[1]) are exclusion angles between the weight is 0;
-      (angle[2], angle[3]) are inclusion angles between the weight is 1,
-      other angles get interpolated linearly.
+  def __init__ (self, incl, excl, **kwarg):
+    """incl is two angles which get weight 1
+       excl is two angles for weight 0
+       the rest is interpolated somehow.
     """
-    super (angle_map, self).__init__ (self, **kwarg)
-    self.angles = angles
+    print ("kwarg:", kwarg)
+    super (angle_map, self).__init__ (**kwarg)
+    incl = (min (incl), max (incl))
+    excl = (min (excl), max (excl))
+    self.angles = list ()
+    self.angles.extend ([(incl[0], 1), (incl[1], 1)])
+    self.angles.extend ([(excl[0], 0), (excl[1], 0)])
+    self.angles.sort ()
+    (min_a, min_w) = self.angles[0]
+    (max_a, max_w) = self.angles[-1]
+    self.angles.insert (0, (max_a - 360, max_w))
+    self.angles.append ((min_a + 360, min_w))
   def get_local_weight (self, coords):
     """calculate the weight for the vertex with the given coordinates.
        coords are a position in local space.
     """
-    angle = math.degrees (math.atan2 (coords[1], coords[0]))
-    # todo: translate the angle to a weight
-    if angle < 0:
-      return angle + 360
-    else:
-      return angle
-  pass
+    angle = math.degrees (math.atan2 (coords[1], coords[0])) % 360
+    # search for the two angles-weights surrounding the angle.
+    pos = 1
+    while pos != 5:
+      if angle < self.angles[pos][0]:
+        break
+      else:
+        pos += 1;
+    # angle[pos-1] is less than angle, angle[pos] is greater than angle.
+    (left_a, left_w) = self.angles[pos-1]
+    (right_a, right_w) = self.angles[pos]
+    # ratio = 0 when near the left angle, 1 when near the right angle
+    ratio = (angle - left_a) / (right_a - left_a)
+    weight = (1 - ratio) * left_w + ratio * right_w
+    return weight
 
 class zdist_map (transform_map):
   """weight map implementation that applies a transformation to a vertex,
@@ -110,7 +127,7 @@ class zdist_map (transform_map):
     elif self.zmax < zdist:
       return 1
     else:
-      return (zdist - zmin) / (zmax - zmin)
+      return (zdist - self.zmin) / (self.zmax - self.zmin)
 
 class sphere_dist_map (transform_map):
   """weight map that uses the inclusion of a vertex within a ellipsoid
@@ -171,7 +188,7 @@ class group_map (weight_map):
     super (group_map, self).__init__ (**kwarg)
     idxs_list = list (idxs)
     idxs_list.sort ()
-    self.idxs = array ('i', idxs_list)
+    self.idxs = array.array ('i', idxs_list)
     self.min = self.idxs[0]
     self.max = self.idxs[-1] + 1
   def get_weight (self, index):
