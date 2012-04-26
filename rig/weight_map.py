@@ -67,12 +67,13 @@ class angle_map (transform_map):
      projects it into the xy-plane and uses the angle between the
      x-axis and the vector (positive direction) to create a weight-value.
   """
-  def __init__ (self, incl, excl, **kwarg):
+  def __init__ (self, incl = None, excl = None, **kwarg):
     """incl is two angles which get weight 1
        excl is two angles for weight 0
        the rest is interpolated somehow.
     """
-    print ("kwarg:", kwarg)
+    assert (incl)
+    assert (excl)
     super (angle_map, self).__init__ (**kwarg)
     incl = (min (incl), max (incl))
     excl = (min (excl), max (excl))
@@ -109,12 +110,14 @@ class zdist_map (transform_map):
      measures its value along the z-axis and uses that value to check
      if a predefined interval is met.
   """
-  def __init__ (self, zmin, zmax, **kwarg):
+  def __init__ (self, zmin = None, zmax = None, **kwarg):
     """initialize a zdist map with the zrange [zmin, zmax]. z-values
        below zmin get a weight of 0, z-values above zmax get a weight of 1,
        intermediate values are interpolated linearly.
     """
     super (zdist_map, self).__init__ (**kwarg)
+    assert (zmin is not None)
+    assert (zmax is not None)
     self.zmin = zmin
     self.zmax = zmax
   def get_local_weight (self, coords):
@@ -152,12 +155,14 @@ class sphere_map (geometric_map):
   """weight map implementation that uses an inclusion/exclusion-sphere
      to calculate a weight.
   """
-  def __init__ (self, inner, outer, **kwarg):
+  def __init__ (self, inner = None, outer = None, **kwarg):
     """initialize a sphere map with two ellipsoids inner and outer.
        inner and outer are given as matrices transforming the unit-sphere
        into the respective ellipsoids.
     """
     super (sphere_map, self).__init__ (**kwarg)
+    assert (inner)
+    assert (outer)
     self.inner_map = sphere_dist_map (inner, **kwarg)
     self.outer_map = sphere_dist_map (outer, **kwarg)
   def get_weight (self, index):

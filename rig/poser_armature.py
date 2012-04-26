@@ -119,6 +119,10 @@ class armature (object):
       if 'name' in actor.child ():
         proxy = bone (actor, self)
         self.bone_dic[proxy.get_id ()] = proxy
+  def get_bone (self, name):
+    """return a bone by its name.
+    """
+    return self.bone_dic.get (name)
   def get_children (self, parent):
     """return all bones that have parent for a parent.
        if parent is None returns the root bones.
