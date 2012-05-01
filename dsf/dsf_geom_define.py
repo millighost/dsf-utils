@@ -1,4 +1,4 @@
-import bpy
+import bpy, bmesh
 import logging
 from array import array
 
@@ -30,25 +30,29 @@ class dsf_geom_define (object):
   def define_geom (self, name, geom):
     """load the vertices and faces into blender.
     """
-    mesh_dat = bpy.data.meshes.new (name)
+    bmesh_dat = bmesh.new ()
     v = geom['v']
     # insert vertices. qmod.v is a list of triples (x,y,z), so there are a
     # third of them verts.
     n_verts = len (v) // 3
-    mesh_dat.vertices.add (n_verts)
-    idx = 0
-    for bvert in mesh_dat.vertices:
-      bvert.co = v[idx : idx+3]
-      idx += 3
+    for vert_idx in range (n_verts):
+      vert_coords = v[3*vert_idx : 3*vert_idx+3]
+      bmesh_dat.verts.new (vert_coords)
     # each face has exactly 4 vertex indices.
     f = geom['f']
-    mesh_dat.faces.add (len (f) // 4)
-    mesh_dat.faces.foreach_set ("vertices_raw", f)
+    n_faces = len (f) // 4
+    for face_idx in range (n_faces):
+      face_vis = f[4*face_idx:4*face_idx+4]
+      bmesh_dat.faces.new ([bmesh_dat.verts[vi] for vi in face_vis])
+    # convert the bmesh to a mesh
+    mesh_dat = bpy.data.meshes.new (name)
     mesh_obj = bpy.data.objects.new (name, mesh_dat)
+    bmesh_dat.to_mesh (mesh_dat)
     bpy.context.scene.objects.link (mesh_obj)
     bpy.context.scene.update ()
     if 'id_path' in geom:
       mesh_obj['id_path'] = geom['id_path']
+    bmesh_dat.free ()
     return mesh_obj
 
   @classmethod
@@ -62,6 +66,8 @@ class dsf_geom_define (object):
     # Two save material-indexes, assign materials only if there are
     # actual faces using them.
     m = geom['m']
+    bmesh_dat = bmesh.new ()
+    bmesh_dat.from_mesh (mesh.data)
     material_index = 0
     for (mat_id, mat_name) in enumerate (geom['mm']):
       # get a list of all faces with the given material id.
@@ -81,9 +87,11 @@ class dsf_geom_define (object):
         blender_mat.name = mat_name
         mesh.data.materials.append (blender_mat)
         for fidx in fset:
-          mesh.data.faces[fidx].material_index = material_index
+          bmesh_dat.faces[fidx].material_index = material_index
         material_index += 1
     # todo: find out if these updates are necessary.
+    bmesh_dat.to_mesh (mesh.data)
+    bmesh_dat.free ()
     mesh.data.update ()
     bpy.context.scene.update ()
 
