@@ -13,7 +13,7 @@ bl_info = {
   'description': 'import geometry from a dsf file.',
   'author': 'millighost',
   'version': (1, 0),
-  'blender': (2,5,8),
+  'blender': (2,6,3),
   'category': 'Import-Export',
   'warning': '',
   'wiki_url': 'http://nonexistent',
