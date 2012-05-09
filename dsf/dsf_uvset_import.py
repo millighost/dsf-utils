@@ -33,7 +33,7 @@ class import_dsf_uvset (bpy.types.Operator):
   # the bl_label is displayed in the operator-menu (with space-KEY).
   bl_label = 'import dsf-uvset'
   # the bl_idname member is used by blender to call this class.
-  bl_idname = 'import.dsfuvset'
+  bl_idname = 'uv.dsf'
   # the filepath seems to be hidden magic; the file-selector
   # menu places the chosen filename-string into it.
   # (changes sometimes; look for path/dirname/filepath)

@@ -1,6 +1,8 @@
+import math, logging
 import mathutils
 import bpy
-import math
+
+log = logging.getLogger ('rig-def')
 
 def create_blender_armature (name, ctx):
   """create an empty armature data and object, put the armature
@@ -54,11 +56,12 @@ def insert_bones (si_arm, armdat):
   parent_queue = [None]
   while len (parent_queue) > 0:
     parent = parent_queue.pop ()
+    log.info ("inserting children of %s", parent)
     if parent is not None:
       parent_bbone = armdat.edit_bones[parent.get ('id')]
     else:
       parent_bbone = None
-    children = si_arm.get_children (parent)
+    children = list (si_arm.get_children (parent))
     for child in children:
       bbone = insert_bone (child, armdat)
       bbone.parent = parent_bbone

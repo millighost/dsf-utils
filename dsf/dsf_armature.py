@@ -1,4 +1,6 @@
-import operator, math
+import operator, math, logging
+
+log = logging.getLogger ('dsf-arm')
 
 def l2_distance (a, b):
   """calculate the l2-distance between the two vectors a and b.
@@ -108,3 +110,16 @@ class armature (object):
       # in blender.
       dsf_bone = bone (node, self)
       self.bone_dic[dsf_bone.get ('id')] = dsf_bone
+  def get_children (self, parent):
+    """return all bones that are children of parent.
+       returns roots for parent = None.
+    """
+    log.info ("retrieve children of %s", parent)
+    if parent is not None:
+      parent_name = parent.get ('id')
+    else:
+      parent_name = None
+    for (name, bone) in self.bone_dic.items ():
+      if bone.get ('parent') == parent_name:
+        yield bone
+    return

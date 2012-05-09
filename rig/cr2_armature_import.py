@@ -6,17 +6,6 @@ import rig.import_rig
 
 log = logging.getLogger ('import_cr2_arm')
 
-bl_info = {
-  'name': 'import cr2 armature',
-  'description': 'import a cr2 armature',
-  'author': 'millighost',
-  'version': (1, 0),
-  'blender': (2,5,8),
-  'category': 'Import-Export',
-  'warning': '',
-  'wiki_url': 'http://nonexistent',
-}
-
 class import_cr2_armature (bpy.types.Operator):
   # the doc text is displayed in the tooltip of the menu entry.
   """Load an armature from a poser cr2 figure file."""
