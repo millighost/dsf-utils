@@ -11,6 +11,7 @@ try:
   import dsf.dsf_morph_import
   import dsf.dsf_uvset_import
   import dsf.dsf_morph_export
+  import dsf.dsf_arm_import
 except ImportError as e:
   # if the error is something like 'no module named bpy', this
   # file is not included from within blender. Do not abort in this
@@ -39,6 +40,7 @@ def register ():
   dsf_morph_import.register ()
   dsf_morph_export.register ()
   dsf_uvset_import.register ()
+  dsf_arm_import.register ()
 
 def unregister ():
   """call unregister functions of the submodules in
@@ -48,3 +50,4 @@ def unregister ():
   dsf_morph_export.unregister ()
   dsf_morph_import.unregister ()
   dsf_geom_import.unregister ()
+  dsf_arm_import.unregister ()
