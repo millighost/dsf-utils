@@ -15,10 +15,11 @@ class weight_map (object):
     return 0
   def get_domain (self):
     """return the index range this weight map is defined on.
-       Subclasses should overwrite this function to narrow down the range.
+       Subclasses should overwrite this function to make it as narrow
+       as possible.
     """
-    # default: return an unlimited range (here: up to 1 billion weights).
-    return (0, 10 ** 9)
+    # default: return an empty range
+    return (0, 0)
 
 class geometric_map (weight_map):
   """weight map that is based on geometric location of a vertex
@@ -283,16 +284,16 @@ class table_map (weight_map):
        @param indices is a list of indexes for the weightmap.
        @param values is an iterable return weights.
     """
-    super (table_map, self).__init__ (self, **kwarg)
+    super (table_map, self).__init__ (**kwarg)
     (low, high) = (min (indices), max (indices) + 1)
     assert (len (indices) < high - low)
     density = len (indices) / (high - low)
     if density < 0.1:
-      self.data = sparse_table (self, indices, values)
+      self.data = sparse_table (indices, values)
     elif density < 0.7:
-      self.data = linear_table (self, indices, values)
+      self.data = linear_table (indices, values)
     else:
-      self.data = dense_table (self, indices, values)
+      self.data = dense_table (indices, values)
     self.domain = (low, high)
   def get_domain (self):
     """overwritten domain function returns an actually usable range.
