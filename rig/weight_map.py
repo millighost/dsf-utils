@@ -1,4 +1,5 @@
 import types, itertools, array, functools, bisect, math
+import operator
 
 class weight_map (object):
   """weight map interface: represents a function that order a weight
@@ -330,14 +331,31 @@ def multiply_map (weight_map):
     """
     return (self.min, self.max)
 
-def average_map (weight_map):
+class scale_map (weight_map):
+  """a map that is the same as another map scaled by a constant.
+  """
+  def __init__ (self, factor, other, **kwarg):
+    """initialize with another map other and a constant scaling factor.
+    """
+    super (scale_map, self).__init__ (**kwarg)
+    self.factor = factor
+    self.other = other
+  def get_weight (self, index):
+    """return the scaled weight of index.
+    """
+    other_weight = self.other.get_weight (index)
+    return self.factor * other_weight
+  def get_domain (self):
+    return self.other.get_domain ()
+
+class average_map (weight_map):
   """define a weight map by averaging multiple maps.
   """
   def __init__ (self, *arg, **kwarg):
     """takes a variable number of arguments, each is a weight-map.
     """
     super (average_map, self).__init__ (**kwarg)
-    self.submaps = list (arg)
+    self.submaps = list (*arg)
     (self.min, self.max) = super (average_map, self).get_domain ()
     for submap in self.submaps:
       (submin, submax) = submap.get_domain ()
@@ -347,7 +365,7 @@ def average_map (weight_map):
     """return the average of all weights.
     """
     added = functools.reduce\
-        (operator.add, map (lambda sub: sub.get_weight (index)))
+        (operator.add, map (lambda sub: sub.get_weight (index), self.submaps))
     return added / len (self.submaps)
   def get_domain (self):
     """return the union of all subdomains.
