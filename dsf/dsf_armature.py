@@ -2,10 +2,6 @@ import operator, math, logging
 
 log = logging.getLogger ('dsf-arm')
 
-def l2_distance (a, b):
-  """calculate the l2-distance between the two vectors a and b.
-  """
-  
 def get_channel_value (channel):
   """retrieve the initial value from a channel.
   """
@@ -110,16 +106,16 @@ class armature (object):
       # in blender.
       dsf_bone = bone (node, self)
       self.bone_dic[dsf_bone.get ('id')] = dsf_bone
+  def get_bone (self, name):
+    """get a bone by its name.
+    """
+    return self.bone_dic[name]
   def get_children (self, parent):
-    """return all bones that are children of parent.
+    """return all bones that are children of the bone named parent.
        returns roots for parent = None.
     """
     log.info ("retrieve children of %s", parent)
-    if parent is not None:
-      parent_name = parent.get ('id')
-    else:
-      parent_name = None
     for (name, bone) in self.bone_dic.items ():
-      if bone.get ('parent') == parent_name:
+      if bone.get ('parent') == parent:
         yield bone
     return
