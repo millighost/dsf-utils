@@ -35,7 +35,7 @@ class import_dsf_arm (bpy.types.Operator):
     """
     log.info ("define: %s", self.properties.filepath)
     arm = dsf.dsf_armature.armature (jdata)
-    rig.rig_define.define_armature (arm, ctx)
+    (armobj, bmap) = rig.rig_define.define_armature (arm, ctx)
   def execute (self, ctx):
     """load the armature from a dsf and insert it into blender.
     """

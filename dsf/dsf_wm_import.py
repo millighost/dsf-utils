@@ -1,7 +1,7 @@
 import sys, os.path, logging, json
 import bpy
 
-from bpy.props import StringProperty
+from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ImportHelper
 
 import dsf.dsf_weightmap
@@ -26,6 +26,12 @@ def load_skin (filepath):
   skin = dsf.dsf_weightmap.skin (jdata['skin'])
   return skin
 
+# weight paint a mesh based on some loading options.
+# options that should be possible:
+# - merge the two main axes into one.
+# - merge all axes into one.
+# - with or without scale
+
 class import_dsf_wm (bpy.types.Operator):
   """operator to import a dsf armature.
   """
@@ -35,17 +41,34 @@ class import_dsf_wm (bpy.types.Operator):
   filepath = StringProperty\
       ('file path', description = 'file path for dsf modifier-library.',\
          maxlen = 1000, default = '')
+  merge_main = BoolProperty (name = 'merge_main',
+                             description = 'merge the two main axes into one.',
+                             default = True)
+  merge_twist = BoolProperty\
+      (name = 'merge_twist',
+       description = 'merge all axes into one (implies merge_main).',
+       default = True)
+  scale = BoolProperty (name = 'scale',
+                        description = 'import scaling weights.',
+                        default = False)
   filter_glob = StringProperty (default = '*.dsf')
-  def define_wm (self, ctx, jdata):
-    """weight paint a mesh based on the loaded data.
+  def define_wm (self, ctx, skin, **kwarg):
+    """weight paint a mesh based on the loaded data in the skin-object.
+       kwarg contains the import-options.
     """
-    log.info ("define: %s", self.properties.filepath)
+    log.info ("define: %s", kwarg)
   def execute (self, ctx):
     """load the modifier-library and put in onto the mesh.
     """
     log.info ("loading: %s", self.properties.filepath)
+    kwarg = {
+      'filepath': self.properties.filepath,
+      'merge_main': self.properties.merge_main,
+      'merge_twist': self.properties.merge_twist,
+      'scale': self.properties.scale
+    }
     skin = load_skin (self.properties.filepath)
-    self.define_wm (ctx, skin)
+    self.define_wm (ctx, skin, **kwarg)
     return {'FINISHED'}
   def invoke (self, ctx, event):
     """called by the menu entry or the operator menu.

@@ -146,10 +146,12 @@ def define_armature (si_arm, ctx):
   """create a blender-armature object from the given armature-data.
      blender-function.
      ctx is the context for defining the armature in.
+     Returns the created armature object and a bone-mapping, the latter
+     could be used to create a matching weight-paint.
   """
   armobj = create_blender_armature ('imported-arm', ctx)
   bpy.ops.object.mode_set (mode = 'EDIT')
   bone_map = insert_bones (si_arm, armobj.data)
   bpy.ops.object.mode_set (mode = 'OBJECT')
   configure_bones (si_arm, bone_map, armobj)
-  return armobj
+  return (armobj, bone_map)

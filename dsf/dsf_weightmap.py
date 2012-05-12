@@ -33,7 +33,7 @@ class joint_map (object):
     """
     self.maps = dict ()
     if 'scale_weights' in jdata:
-      self.maps['scale'] = weightmap (jdata['scale_weights'])
+      self.maps[('scale', 'xyz')] = weightmap (jdata['scale_weights'])
     if 'local_weights' in jdata:
       local_weights = jdata['local_weights']
       for axis in ['x', 'y', 'z']:
@@ -41,7 +41,7 @@ class joint_map (object):
           self.maps[('local', axis)] = weightmap (local_weights[axis])
   def get (self, key):
     """get a stored map. currently supported keys:
-       'scale', ('local', 'x'), ..., ('local', 'z').
+       (('scale', 'xyz'), ('local', 'x'), ..., ('local', 'z').
        returns None if the requested map is not there.
     """
     return self.maps.get (key)
@@ -53,15 +53,33 @@ class joint_map (object):
       log.info ("joint_map: key %s found.", key)
       paintable_map = self.maps[key].get_paint_map ()
       log.info ("paintable_map: %s", paintable_map)
-      if key == 'scale':
-        return paintable_map
-      else:
-        # @todo: the euler maps are normalized to 3, for now simply return it.
-        # if this map is used to build a sum of values, a scaling might be
-        # needed here...
-        return paintable_map
+      return paintable_map
     else:
       return None
+  def get_paint_map_mix (self, keys):
+    """for the given list of keys, create a paintable map that mixes
+       the given keys using a simple average.
+    """
+    pmaps = []
+    for key in keys:
+      pmap = self.get_paint_map (key)
+      if pmap is not None:
+        pmaps.append (pmap)
+    if len (pmaps) == 0:
+      return None
+    elif len (pmaps) == 1:
+      return pmaps[0]
+    else:
+      avg_map = rig.weight_map.average_map (pmaps)
+      return avg_map
+  def collect_paint_maps (self):
+    """return a dictionary containing every paintable map of self.
+       key is simply the axis.
+    """
+    return {
+      axis: pmap.get_paint_map ()
+      for (axis, pmap) in self.maps.items ()
+    }
 
 class skin (object):
   """collect all weightmaps for a figure.
@@ -84,7 +102,7 @@ class skin (object):
   def get_paint_map (self, names):
     """return a paintable map for the given joint-maps in names.
        each name in names is a tuple consisting of (body-part, joint),
-       with joint being 'scale' or ('local', '<axis>').
+       with joint being ('scale', 'xyz') or ('local', '<axis>').
     """
     paintable_maps = []
     for (joint_name, axis_name) in names:
@@ -102,5 +120,28 @@ class skin (object):
     """convenience function for returning a mix of maps for a
        single body part.
     """
-    names = [(joint, axis) for axis in axes]
-    return self.get_paint_map (names)
+    joint = self.joint_dic[joint]
+    return joint.get_paint_map_mix (axes)
+  def collect_paint_maps (self):
+    """return a dictionary containing every defined weight map in the skin.
+       each key is a tuple (<joint-name>, <axis-name>).
+    """
+    all_maps = dict ()
+    for (jname, joint) in self.joint_dic.items ():
+      joint_maps = joint.collect_paint_maps ()
+      for (axis, map) in joint_maps.items ():
+        all_maps[(jname, axis)] = map
+    return all_maps
+
+def simple_name (complex_name):
+  """helper function to generate a canonical weight map name (a string) from
+     a combined name of body-part/axis.
+  """
+  (joint, (space, axis)) = complex_name
+  if space == 'scale':
+    return "def-%s.s" % (joint)
+  else:
+    return "def-%s.%s" % (joint, axis)
+
+def paint_maps (maps):
+  pass
