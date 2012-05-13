@@ -1,7 +1,7 @@
 import sys, os.path, logging, json
 import bpy
 
-from bpy.props import StringProperty
+from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ImportHelper
 
 import dsf.dsf_armature
@@ -30,6 +30,15 @@ class import_dsf_arm (bpy.types.Operator):
       ('file path', description = 'file path for dsf armature.',\
          maxlen = 1000, default = '')
   filter_glob = StringProperty (default = '*.dsf')
+  split_twist = BoolProperty\
+      ('split twist', description = 'separate the inner (twist) axis.',
+       default = True)
+  split_main = BoolProperty\
+      ('split main', description = 'separate the outer (main) axis.',
+       default = False)
+  scale = BoolProperty ('scale', description = 'import scaling bone.',
+                        default = False)
+
   def define_arm (self, ctx, jdata):
     """define the armature from the loaded json data.
     """
