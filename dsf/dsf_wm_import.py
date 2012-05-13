@@ -1,5 +1,6 @@
 import sys, os.path, logging, json
 import bpy
+import rig.weight_paint
 
 from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ImportHelper
@@ -28,9 +29,10 @@ def load_skin (filepath):
 
 # weight paint a mesh based on some loading options.
 # options that should be possible:
-# - merge the two main axes into one.
 # - merge all axes into one.
 # - with or without scale
+# when used with the armature import, it should also be possible to
+# merge the two main axes into one, leaving the twist axis alone.
 
 class import_dsf_wm (bpy.types.Operator):
   """operator to import a dsf armature.
@@ -41,33 +43,31 @@ class import_dsf_wm (bpy.types.Operator):
   filepath = StringProperty\
       ('file path', description = 'file path for dsf modifier-library.',\
          maxlen = 1000, default = '')
-  merge_main = BoolProperty (name = 'merge_main',
-                             description = 'merge the two main axes into one.',
-                             default = True)
-  merge_twist = BoolProperty\
-      (name = 'merge_twist',
-       description = 'merge all axes into one (implies merge_main).',
+  merge = BoolProperty\
+      (name = 'merge', description = 'merge the rotation axes into one.',
        default = True)
-  scale = BoolProperty (name = 'scale',
-                        description = 'import scaling weights.',
-                        default = False)
+  scale = BoolProperty\
+      (name = 'scale', description = 'import scaling weights.',
+       default = False)
   filter_glob = StringProperty (default = '*.dsf')
   def define_wm (self, ctx, skin, **kwarg):
     """weight paint a mesh based on the loaded data in the skin-object.
-       kwarg contains the import-options.
+       kwarg contains the import-options passed to the skin-object.
     """
+    mshobj = ctx.scene.objects.active
     log.info ("define: %s", kwarg)
+    paint_groups = skin.collect_all_paint_maps (**kwarg)
+    for (group_name, paint_map) in paint_groups.items ():
+      rig.weight_paint.paint_group (paint_map, mshobj, group_name)
   def execute (self, ctx):
     """load the modifier-library and put in onto the mesh.
     """
     log.info ("loading: %s", self.properties.filepath)
+    skin = load_skin (self.properties.filepath)
     kwarg = {
-      'filepath': self.properties.filepath,
-      'merge_main': self.properties.merge_main,
-      'merge_twist': self.properties.merge_twist,
+      'merge': self.properties.merge,
       'scale': self.properties.scale
     }
-    skin = load_skin (self.properties.filepath)
     self.define_wm (ctx, skin, **kwarg)
     return {'FINISHED'}
   def invoke (self, ctx, event):

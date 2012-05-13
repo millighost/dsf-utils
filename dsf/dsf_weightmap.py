@@ -33,15 +33,15 @@ class joint_map (object):
     """
     self.maps = dict ()
     if 'scale_weights' in jdata:
-      self.maps[('scale', 'xyz')] = weightmap (jdata['scale_weights'])
+      self.maps['s'] = weightmap (jdata['scale_weights'])
     if 'local_weights' in jdata:
       local_weights = jdata['local_weights']
       for axis in ['x', 'y', 'z']:
         if axis in local_weights:
-          self.maps[('local', axis)] = weightmap (local_weights[axis])
+          self.maps[axis] = weightmap (local_weights[axis])
   def get (self, key):
     """get a stored map. currently supported keys:
-       (('scale', 'xyz'), ('local', 'x'), ..., ('local', 'z').
+       's' (for scale), 'x', 'y', 'z'.
        returns None if the requested map is not there.
     """
     return self.maps.get (key)
@@ -72,9 +72,21 @@ class joint_map (object):
     else:
       avg_map = rig.weight_map.average_map (pmaps)
       return avg_map
+  def get_paint_map_groups (self, groups):
+    """get a set of paint maps for this joint. groups is a list where
+       each member is a set of map-axes. Returns a dictionary where the
+       keys are the groups.
+    """
+    group_dic = dict ()
+    for group in groups:
+      pmap = self.get_paint_map_mix (group)
+      if pmap is not None:
+        group_dic[group] = pmap
+    return group_dic
+
   def collect_paint_maps (self):
     """return a dictionary containing every paintable map of self.
-       key is simply the axis.
+       key is simply the axis. No averaging is done.
     """
     return {
       axis: pmap.get_paint_map ()
@@ -94,54 +106,49 @@ class skin (object):
       jid = joint['id']
       jmap = joint_map (joint)
       self.joint_dic[jid] = jmap
+  def get_joint_names (self):
+    """return a list of all joints this skin has.
+    """
+    return self.joint_dic.keys ()
   def get (self, name):
     """return the maps for the given bone name. This function returns
        the appropriate joint_map instance.
     """
     return self.joint_dic.get (name)
-  def get_paint_map (self, names):
-    """return a paintable map for the given joint-maps in names.
-       each name in names is a tuple consisting of (body-part, joint),
-       with joint being ('scale', 'xyz') or ('local', '<axis>').
-    """
-    paintable_maps = []
-    for (joint_name, axis_name) in names:
-      log.info ("joint: %s, axis: %s", joint_name, axis_name)
-      joint = self.get (joint_name)
-      paintable_map = joint.get_paint_map (axis_name)
-      log.info ("paintable: %s", paintable_map)
-      if paintable_map is not None:
-        paintable_maps.append (paintable_map)
-    log.info ("creating average.")
-    avg_map = rig.weight_map.average_map (paintable_maps)
-    log.info ("avg: %s", avg_map)
-    return avg_map
   def get_single_paint_map (self, joint, axes):
     """convenience function for returning a mix of maps for a
        single body part.
     """
     joint = self.joint_dic[joint]
     return joint.get_paint_map_mix (axes)
-  def collect_paint_maps (self):
-    """return a dictionary containing every defined weight map in the skin.
-       each key is a tuple (<joint-name>, <axis-name>).
+  def canonicalize_map_name (self, joint, group):
+    """build a simple string from a joint name and a group of axes.
+       This name can be used to create a vertex group of it.
     """
-    all_maps = dict ()
+    return "def-%s.%s" % (joint, group)
+  def collect_paint_maps (self, groups):
+    """get all paintable maps in groups for all joints. Each group is averaged,
+       in general that means the results are not normalized to the number
+       of groups.
+    """
+    all_map_dic = dict ()
     for (jname, joint) in self.joint_dic.items ():
-      joint_maps = joint.collect_paint_maps ()
-      for (axis, map) in joint_maps.items ():
-        all_maps[(jname, axis)] = map
-    return all_maps
-
-def simple_name (complex_name):
-  """helper function to generate a canonical weight map name (a string) from
-     a combined name of body-part/axis.
-  """
-  (joint, (space, axis)) = complex_name
-  if space == 'scale':
-    return "def-%s.s" % (joint)
-  else:
-    return "def-%s.%s" % (joint, axis)
-
-def paint_maps (maps):
-  pass
+      pmap_dic = joint.get_paint_map_groups (groups)
+      for (pmap_name, pmap_group) in pmap_dic.items ():
+        canonical_name = self.canonicalize_map_name (jname, pmap_name)
+        all_map_dic[canonical_name] = pmap_group
+    return all_map_dic
+  def collect_all_paint_maps (self, merge = True, scale = False):
+    """return a dictionary containing every defined weight map in the skin.
+       grouping and generation of maps depends on the kwarg:
+       merge: if True, the 3 rotation axes get merged into a single map.
+       scale: if True, a separate map for scaling is generated (otherwise
+         no scaling information is used).
+    """
+    if merge:
+      groups = ['xyz']
+    else:
+      groups = ['x', 'y', 'z']
+    if scale:
+      groups.append ('s')
+    return self.collect_paint_maps (groups)
