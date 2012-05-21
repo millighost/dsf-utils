@@ -16,7 +16,6 @@ class codec_repo (object):
   @classmethod
   def register_codec_class (self, type, cls):
     self.codec_class_mapping[type] = cls
-
   def get_instance (self, key):
     """instantiate the codec_class for the given type key and return
        the codec-instance.
@@ -28,7 +27,6 @@ class codec_repo (object):
         instance = cls ()
         self.codec_instance_mapping[key] = instance
     return instance
-
   def codec_for_object (self, bobj):
     """return a codec instance for the given blender object.
     """
@@ -58,7 +56,7 @@ class codec_base (object):
 
 class image_codec (codec_base):
   def encode (self, bobj):
-    return { 'type': bobj.type, 'filepath': bobj.filepath }
+    return { 'type': bobj.type, 'filepath': bobj.filepath, 'name': bobj.name }
   def decode (self, data):
     log.info ("decode image %s", data)
     bobj = bpy.data.images.load (filepath = data['filepath'])
