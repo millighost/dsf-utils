@@ -7,7 +7,7 @@ from array import array
 bl_info = {
   'name': 'remove empty groups',
   'description': 'remove groups that are empty or have zero weight',
-  'author': 'millighost',
+  'author': 'millighost@googlemail.com',
   'version': (1, 0),
   'blender': (2,6,0),
   'category': 'Mesh',
