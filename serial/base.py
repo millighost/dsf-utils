@@ -1,4 +1,7 @@
 from serial.repo import codec_repo
+import logging
+
+log = logging.getLogger ('base')
 
 class codec_base (object):
   """all data type specific codecs should inherit from this class.
@@ -17,12 +20,16 @@ class encoder (object):
     self.repo = codec_repo ()
   def encode_object (self, bobj):
     codec_instance = self.repo.codec_for_object (bobj)
-    flat_dic = codec_instance.encode (bobj)
-    deep_dic = {
-      key: self.encode (value)
-        for (key, value) in flat_dic.items ()
-    }
-    return deep_dic
+    if codec_instance is None:
+      log.info ("no codec for %s", bobj)
+      return None
+    else:
+      flat_dic = codec_instance.encode (bobj)
+      deep_dic = {
+        key: self.encode (value)
+          for (key, value) in flat_dic.items ()
+      }
+      return deep_dic
   def encode_list (self, bobj):
     return []
   def encode (self, bobj):

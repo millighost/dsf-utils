@@ -12,6 +12,10 @@ class codec_repo (object):
     """
     self.codec_instance_mapping = {}
   @classmethod
+  def register_codec_class_builtin (self, type, name, cls):
+    self.codec_class_mapping[type] = cls
+    self.codec_class_mapping[name] = cls
+  @classmethod
   def register_codec_class (self, type, cls):
     self.codec_class_mapping[type] = cls
   def get_instance (self, key):

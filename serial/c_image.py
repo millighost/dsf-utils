@@ -17,4 +17,3 @@ class c_image (codec_base):
     return
 
 codec_repo.register_codec_class ('IMAGE', c_image)
-
