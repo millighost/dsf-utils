@@ -8,7 +8,7 @@ class dsf_geom_load (object):
   @classmethod
   def intern_geometry (self, jdata):
     v = array ('f')
-    f = array ('i')
+    f = list ()
     m = array ('i')
     g = array ('i')
     for vertex in jdata['vertices']['values']:
@@ -17,12 +17,7 @@ class dsf_geom_load (object):
     mat_list = jdata['polygon_material_groups']['values']
     for polygon in jdata['polylist']['values']:
       (gidx, midx, verts) = (polygon[0], polygon[1], polygon[2:])
-      # for blender: rotate the face, if it ends in a 0.
-      if len (verts) == 4 and verts[3] == 0:
-        verts[0], verts[1:] = verts[3], verts[:3]
-      if len (verts) != 4:
-        verts.append (0)
-      f.extend (verts)
+      f.append (verts)
       m.append (midx)
       g.append (gidx)
     return {

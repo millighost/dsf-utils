@@ -13,13 +13,13 @@ class dsf_geom_define (object):
     """
     gmap = dict ()
     for fidx, g in enumerate (geom['g']):
-      fvs = geom['f'][4*fidx:4*fidx+4]
+      fvs = geom['f'][fidx]
       if g not in gmap:
         gmap[g] = array ('i')
       if fvs[0] != 0:
         gmap[g].extend (fvs)
       else:
-        gmap[g].extend (fvs[0:3])
+        gmap[g].extend (fvs)
     gnmap = dict ()
     for (gidx, gname) in enumerate (geom['gm']):
       if gidx in gmap:
@@ -40,9 +40,7 @@ class dsf_geom_define (object):
       bmesh_dat.verts.new (vert_coords)
     # each face has exactly 4 vertex indices.
     f = geom['f']
-    n_faces = len (f) // 4
-    for face_idx in range (n_faces):
-      face_vis = f[4*face_idx:4*face_idx+4]
+    for (face_idx, face_vis) in enumerate (f):
       bmesh_dat.faces.new ([bmesh_dat.verts[vi] for vi in face_vis])
     # convert the bmesh to a mesh
     mesh_dat = bpy.data.meshes.new (name)
