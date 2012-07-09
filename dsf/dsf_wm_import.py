@@ -12,7 +12,7 @@ log = logging.getLogger ("dsf-wm-imp")
 def load_mod_lib (filepath):
   """load the dsf file and return the modifier-library.
   """
-  ifh = open (filepath, 'r')
+  ifh = open (filepath, 'r', encoding = 'latin1')
   jdata = json.load (ifh)
   ifh.close ()
   if 'node_library' in jdata:

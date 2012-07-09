@@ -28,7 +28,7 @@ def export_dsf_morph_file (filename, context = None):
   active_obj = context.active_object
   morph_data = dsf_skey_fetch.convert (active_obj)
   morph_file_data = dsf_morph_create.make_morph_file (shape_key = morph_data)
-  ofh = open (filename, 'w')
+  ofh = open (filename, 'w', encoding = 'latin1')
   json.dump (morph_file_data, ofh, indent = 2)
   ofh.close ()
 

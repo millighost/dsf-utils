@@ -54,5 +54,5 @@ def get_modifier_lib (root):
 def read_dsf_data (filename):
   """return a dsf file and (for now return the modifier lib.
   """
-  jdata = json.load (open (filename, 'r'))
+  jdata = json.load (open (filename, 'r', encoding = 'latin1'))
   return modifier_lib (jdata['modifier_library'])
