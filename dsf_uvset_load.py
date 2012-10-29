@@ -26,8 +26,6 @@ class dsf_uvset (object):
       }
     else:
       self.separate = { }
-    # todo: check this stuff with the vertex_indices (unused so far)...
-    self.vertex_index = array ('i', uvlib['vertex_indices'])
     self.uvs = array\
         ('f', itertools.chain.from_iterable (uvlib['uvs']['values']))
   def get_name (self):
@@ -56,7 +54,8 @@ class dsf_uvset_load (object):
     """load the given filename, check it for a uvset and return
        the contents in some form usable for the definition function.
     """
-    jdata = json.load (open (filename, 'r', encoding = 'latin1'))
+    import dsf.dsf_io
+    jdata = dsf.dsf_io.read_json_data (filename)
     if 'uv_set_library' not in jdata:
       raise TypeError ('file does not contain a uv set library.')
     uvlibs = jdata['uv_set_library']

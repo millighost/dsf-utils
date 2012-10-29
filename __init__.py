@@ -18,7 +18,7 @@ except ImportError as e:
   # if the error is something like 'no module named bpy', this
   # file is not included from within blender. Do not abort in this
   # case, because parts of this module are still useful.
-  if str (e).index ('bpy') >= 0:
+  if str (e).find ('bpy') >= 0:
     log.warn ("import error ignored: %s", e)
   else:
     raise

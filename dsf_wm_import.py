@@ -1,31 +1,14 @@
 import sys, os.path, logging, json
-import bpy
 import rig.weight_paint
-
-from bpy.props import StringProperty, BoolProperty
-from bpy_extras.io_utils import ImportHelper
-
-import dsf.dsf_weightmap
 
 log = logging.getLogger ("dsf-wm-imp")
 
-def load_mod_lib (filepath):
-  """load the dsf file and return the modifier-library.
-  """
-  ifh = open (filepath, 'r', encoding = 'latin1')
-  jdata = json.load (ifh)
-  ifh.close ()
-  if 'node_library' in jdata:
-    # return the first modifier library.
-    return jdata['modifier_library'][0]
-  else:
-    raise KeyError ("data does not contain modifier-library.")
-def load_skin (filepath):
-  """load the dsf file and return a skin.
-  """
-  jdata = load_mod_lib (filepath)
-  skin = dsf.dsf_weightmap.skin (jdata['skin'])
-  return skin
+import bpy
+from bpy.props import StringProperty, BoolProperty
+from bpy_extras.io_utils import ImportHelper
+
+import dsf.dsf_io
+import dsf.dsf_weightmap
 
 # weight paint a mesh based on some loading options.
 # options that should be possible:
@@ -63,7 +46,7 @@ class import_dsf_wm (bpy.types.Operator):
     """load the modifier-library and put in onto the mesh.
     """
     log.info ("loading: %s", self.properties.filepath)
-    skin = load_skin (self.properties.filepath)
+    skin = dsf.dsf_weightmap.load_skin (self.properties.filepath)
     kwarg = {
       'merge': self.properties.merge,
       'scale': self.properties.scale

@@ -31,7 +31,8 @@ class dsf_geom_load (object):
        g - include face-groups
        m - include materials
     """
-    jdata = json.load (open (filename, 'r', encoding = 'latin1'))
+    import dsf.dsf_io
+    jdata = dsf.dsf_io.read_json_data (filename, encoding = 'latin1')
     geom = self.intern_geometry\
         (jdata['geometry_library'][0])
     geom['id_path'] =\
