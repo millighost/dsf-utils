@@ -1,6 +1,7 @@
 # union module for inclusion of all dsf-related modules into
 # one directory. This should be the only module directly
 # included/executed from blender.
+#
 import logging
 
 logging.basicConfig (level = logging.INFO)
