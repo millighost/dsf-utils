@@ -4,16 +4,16 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ImportHelper
 
-import dsf.dsf_armature
-import rig.rig_define
+from . import dsf_armature
+from .rig import rig_define
 
 log = logging.getLogger ("dsf-arm-imp")
 
 def load_node_lib (filepath):
   """load the dsf file, check that there is a node lib in it and return it.
   """
-  import dsf.dsf_io
-  jdata = dsf.dsf_io.read_json_data (filepath, encoding = 'latin1')
+  from . import dsf_io
+  jdata = dsf_io.read_json_data (filepath, encoding = 'latin1')
   if 'node_library' in jdata:
     return jdata['node_library']
   else:
@@ -42,8 +42,8 @@ class import_dsf_arm (bpy.types.Operator):
     """define the armature from the loaded json data.
     """
     log.info ("define: %s", self.properties.filepath)
-    arm = dsf.dsf_armature.armature (jdata)
-    (armobj, bmap) = rig.rig_define.define_armature (arm, ctx)
+    arm = dsf_armature.armature (jdata)
+    (armobj, bmap) = rig_define.define_armature (arm, ctx)
   def execute (self, ctx):
     """load the armature from a dsf and insert it into blender.
     """

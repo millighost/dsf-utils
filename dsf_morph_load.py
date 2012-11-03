@@ -1,6 +1,6 @@
 # read morphs from a dsf data file.
 import json
-import dsf.dsf_io
+from . import dsf_io
 
 class modifier_lib (object):
   """class to represent on modifier library element from a dsf file.
@@ -55,5 +55,5 @@ def get_modifier_lib (root):
 def read_dsf_data (filename):
   """return a dsf file and (for now return the modifier lib.
   """
-  dsf.dsf_io.read_json_data (filename, encoding = 'latin1')
+  dsf_io.read_json_data (filename, encoding = 'latin1')
   return modifier_lib (jdata['modifier_library'])

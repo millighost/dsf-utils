@@ -1,5 +1,5 @@
 import sys, os.path, logging, json
-import rig.weight_paint
+from .rig import weight_paint
 
 log = logging.getLogger ("dsf-wm-imp")
 
@@ -7,8 +7,7 @@ import bpy
 from bpy.props import StringProperty, BoolProperty
 from bpy_extras.io_utils import ImportHelper
 
-import dsf.dsf_io
-import dsf.dsf_weightmap
+from . import dsf_weightmap
 
 # weight paint a mesh based on some loading options.
 # options that should be possible:
@@ -41,12 +40,12 @@ class import_dsf_wm (bpy.types.Operator):
     log.info ("define: %s", kwarg)
     paint_groups = skin.collect_all_paint_maps (**kwarg)
     for (group_name, paint_map) in paint_groups.items ():
-      rig.weight_paint.paint_group (paint_map, mshobj, group_name)
+      weight_paint.paint_group (paint_map, mshobj, group_name)
   def execute (self, ctx):
     """load the modifier-library and put in onto the mesh.
     """
     log.info ("loading: %s", self.properties.filepath)
-    skin = dsf.dsf_weightmap.load_skin (self.properties.filepath)
+    skin = dsf_weightmap.load_skin (self.properties.filepath)
     kwarg = {
       'merge': self.properties.merge,
       'scale': self.properties.scale

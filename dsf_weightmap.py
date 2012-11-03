@@ -1,6 +1,6 @@
 import logging
-import rig.weight_map
-import dsf.dsf_io
+from . import dsf_io
+from .rig import weight_map
 
 log = logging.getLogger ('dsf-wm')
 
@@ -179,7 +179,7 @@ class skin (object):
 def load_mod_lib (filepath):
   """load the dsf file and return the modifier-library.
   """
-  jdata = dsf.dsf_io.read_json_data (filepath)
+  jdata = dsf_io.read_json_data (filepath)
   if 'node_library' in jdata:
     # return the first modifier library.
     return jdata['modifier_library'][0]

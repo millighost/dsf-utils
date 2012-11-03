@@ -2,8 +2,8 @@ import sys, os.path, logging
 import bpy
 from bpy.props import BoolProperty, StringProperty
 
-import dsf.dsf_morph_load
-import dsf.dsf_skey_define
+from . import dsf_morph_load
+from . import dsf_skey_define
 
 log = logging.getLogger ('import_morph')
 
@@ -22,10 +22,10 @@ def import_dsf_morph_file (filename, context):
   """load the dsf-file and create a shapekey.
   """
   # parse the dsf-file.
-  mod_lib = dsf.dsf_morph_load.read_dsf_data (filename)
+  mod_lib = dsf_morph_load.read_dsf_data (filename)
   # apply the shapekeys from the modifier lib to the current object.
   obj = context.active_object
-  dsf.dsf_skey_define.define_shapekeys (obj, mod_lib)
+  dsf_skey_define.define_shapekeys (obj, mod_lib)
 
 # the rest defines the gui and the blender operator
 class import_dsf_morph (bpy.types.Operator):

@@ -9,13 +9,13 @@ logging.basicConfig (level = logging.INFO)
 log = logging.getLogger ('dsf')
 
 try:
-  import dsf.dsf_geom_import
-  import dsf.dsf_morph_import
-  import dsf.dsf_uvset_import
-  import dsf.dsf_morph_export
-  import dsf.dsf_arm_import
-  import dsf.dsf_wm_import
-  import dsf.dsf_geom_export
+  from . import dsf_geom_import
+  from . import dsf_morph_import
+  from . import dsf_uvset_import
+  from . import dsf_morph_export
+  from . import dsf_arm_import
+  from . import dsf_wm_import
+  from . import dsf_geom_export
 except ImportError as e:
   # if the error is something like 'no module named bpy', this
   # file is not included from within blender. Do not abort in this

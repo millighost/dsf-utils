@@ -54,8 +54,8 @@ class dsf_uvset_load (object):
     """load the given filename, check it for a uvset and return
        the contents in some form usable for the definition function.
     """
-    import dsf.dsf_io
-    jdata = dsf.dsf_io.read_json_data (filename)
+    from . import dsf_io
+    jdata = dsf_io.read_json_data (filename)
     if 'uv_set_library' not in jdata:
       raise TypeError ('file does not contain a uv set library.')
     uvlibs = jdata['uv_set_library']

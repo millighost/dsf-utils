@@ -3,8 +3,8 @@ import logging, json
 import bpy
 from bpy.props import StringProperty
 
-from dsf.dsf_skey_fetch import dsf_skey_fetch
-from dsf.dsf_morph_create import dsf_morph_create
+from .dsf_skey_fetch import dsf_skey_fetch
+from .dsf_morph_create import dsf_morph_create
 
 log = logging.getLogger ('export-morph-dsf')
 

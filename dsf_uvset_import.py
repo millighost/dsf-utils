@@ -2,8 +2,8 @@ import sys, os.path, logging
 import bpy
 from bpy.props import StringProperty
 
-from dsf.dsf_uvset_load import dsf_uvset_load
-from dsf.dsf_uvset_define import dsf_uvset_define
+from .dsf_uvset_load import dsf_uvset_load
+from .dsf_uvset_define import dsf_uvset_define
 
 log = logging.getLogger ('import_uvset')
 

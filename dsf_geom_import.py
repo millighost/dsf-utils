@@ -3,8 +3,8 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import BoolProperty, StringProperty
 
-from dsf.dsf_geom_load import dsf_geom_load
-from dsf.dsf_geom_define import dsf_geom_define
+from .dsf_geom_load import dsf_geom_load
+from .dsf_geom_define import dsf_geom_define
 
 log = logging.getLogger ('mesh_import_dsf')
 
