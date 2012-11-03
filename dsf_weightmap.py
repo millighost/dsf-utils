@@ -13,12 +13,12 @@ class weightmap (object):
     idxs = []
     wgts = []
     if jdata['count'] == 0:
-      self.map = rig.weight_map.weight_map ()
+      self.map = weight_map.weight_map ()
     else:
       for [idx, wgt] in jdata['values']:
         idxs.append (int (idx))
         wgts.append (float (wgt))
-      self.map = rig.weight_map.table_map (idxs, wgts)
+      self.map = weight_map.table_map (idxs, wgts)
   def get_paint_map (self):
     """returns the paintable map representing self.
     """
@@ -80,7 +80,7 @@ class joint_map (object):
     elif len (pmaps) == 1:
       return pmaps[0]
     else:
-      avg_map = rig.weight_map.average_map (pmaps)
+      avg_map = weight_map.average_map (pmaps)
       return avg_map
   def get_paint_map_groups (self, groups):
     """get a set of paint maps for this joint. groups is a list where
