@@ -1,3 +1,4 @@
+# get a shapekey
 class dsf_skey_fetch (object):
   """utility class to get morph data from an object.
   """
