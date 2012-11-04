@@ -1,0 +1,8 @@
+a set of scripts to import/export DAZStudio4 files into/out of blender, like
+
+- import mesh geometry
+- import morphs as shape keys
+- import uv maps
+- import deform bones as an armature
+- import weight maps as vertex groups
+- export shape keys as morph targets
