@@ -14,6 +14,7 @@ try:
   from . import dsf_uvset_import
   from . import dsf_morph_export
   from . import dsf_arm_import
+  from . import dsf_pose_import
   from . import dsf_wm_import
   from . import dsf_geom_export
 except ImportError as e:
@@ -45,6 +46,7 @@ def register ():
   dsf_morph_export.register ()
   dsf_uvset_import.register ()
   dsf_arm_import.register ()
+  dsf_pose_import.register ()
   dsf_wm_import.register ()
   dsf_geom_export.register ()
 
@@ -54,6 +56,7 @@ def unregister ():
   """
   dsf_geom_export.unregister ()
   dsf_wm_import.unregister ()
+  dsf_pose_import.unregister ()
   dsf_arm_import.unregister ()
   dsf_uvset_import.unregister ()
   dsf_morph_export.unregister ()
