@@ -7,6 +7,15 @@ class dsf_geom_load (object):
 
   @classmethod
   def intern_geometry (self, jdata):
+    """jdata is an entry within a geometry-library.
+       returns an internal representation of the geometry.
+      result contains:
+        v=vertices, f=faces
+        g=group-indices, m=material-indices,
+        gm=group-names, m=material-names
+    
+    """
+    id = jdata['id']
     v = array ('f')
     f = list ()
     m = array ('i')
@@ -26,6 +35,13 @@ class dsf_geom_load (object):
     }
 
   @classmethod
+  def intern_geometry_library (self, jdata, feats = ['vt', 'g', 'm']):
+    """load all geometries from the geometry_library (must be a list).
+       returns a list of all geometries.
+    """
+    return [self.intern_geometry (gitem) for gitem in jdata]
+
+  @classmethod
   def load_geometry (self, filename, feats = ['vt', 'g', 'm']):
     """create a model from the json-data in jdata.
        g - include face-groups
@@ -33,11 +49,11 @@ class dsf_geom_load (object):
     """
     from . import dsf_io
     jdata = dsf_io.read_json_data (filename, encoding = 'latin1')
-    geom = self.intern_geometry\
-        (jdata['geometry_library'][0])
-    geom['id_path'] =\
-        jdata['asset_info']['id'] + "#" + jdata['node_library'][0]['id']
-    return geom
+    geo_lib = self.intern_geometry_library (jdata['geometry_library'])
+    if len (geo_lib) > 0:
+      return geo_lib[0]
+    else:
+      return None
 
   @classmethod
   def load_file (self, filename):
