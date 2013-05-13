@@ -136,11 +136,18 @@ class node_creator (object):
     """create the node-library entry for the object.
        The node is given an id by appending '-node' to the meshes data name.
     """
+    if len (obj.rotation_mode) == 3:
+      # euler rotation
+      rot_mode = obj.rotation_mode
+    else:
+      # other rotation mode (axis/angle or quaternion); use xyz
+      rot_mode = 'XYZ'
+
     id_data = {
       'id': obj.name + '-node',
       'name': obj.name,
       'label': obj.name,
-      'rotation_order' : "XYZ",
+      'rotation_order' : rot_mode
     }
     node_lib = copy.deepcopy (dsf_data.node_entry)
     node_lib.update (id_data)
