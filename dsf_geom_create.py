@@ -142,14 +142,18 @@ class node_creator (object):
     else:
       # other rotation mode (axis/angle or quaternion); use xyz
       rot_mode = 'XYZ'
-
+    # data of a node-lib entry without the channels.
+    # the channels are pulled from the template.
+    jdata = {
+      'rotation_order' : rot_mode
+    }
+    jdata.update (dsf_data.node_entry)
+    # various names of the node
     id_data = {
       'id': obj.name + '-node',
       'name': obj.name,
       'label': obj.name,
-      'rotation_order' : rot_mode
     }
-    node_lib = copy.deepcopy (dsf_data.node_entry)
-    node_lib.update (id_data)
-    return node_lib
+    jdata.update (id_data)
+    return jdata
 
