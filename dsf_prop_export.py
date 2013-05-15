@@ -2,6 +2,7 @@ import logging, json
 
 import bpy
 from bpy.props import StringProperty
+from . import dsf_prop_write
 
 log = logging.getLogger ('export-prop-dsf')
 
@@ -16,14 +17,17 @@ bl_info = {
   'wiki_url': 'http://nonexistent',
 }
 
-def export_dsf_prop_file (filename, context = None):
+def get_selected_objects (context):
+  """return the selected meshes.
+  """
+  return [obj for obj in context.selected_objects if obj.type == 'MESH']
+
+def export_dsf_prop_file (filename, context):
   """main function for exporting a prop something.
      Called after the user has selected some filename.
   """
-  # if the to be loaded file affects the currently selected object,
-  # use this to get it:
-  active_obj = context.active_object
-  log.info ("exporting to %s", filename)
+  objs = get_selected_objects (context)
+  dsf_prop_write.write_objects (objs, filename)
 
 # the rest defines the gui and the blender operator
 class export_dsf_prop (bpy.types.Operator):

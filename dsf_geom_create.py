@@ -54,7 +54,6 @@ class geom_creator (object):
       'values': group_names
     }
     return (jdata, pgroups)
-
   @classmethod
   def get_face_materials (self, obj):
     """returns two objects: the polygon_material_groups as an object
@@ -78,7 +77,6 @@ class geom_creator (object):
       'values': material_names
     }
     return (jdata, mgroups)
-
   @classmethod
   def create_face_data (self, obj):
     """create the polygon data of the object.
@@ -104,7 +102,6 @@ class geom_creator (object):
       'polylist': polylist_jdata
     }
     return jdata
-
   def create_geometry (self, obj):
     """create a geometry_library entry from a mesh.
        The geometry is given a name derived from the mesh data object

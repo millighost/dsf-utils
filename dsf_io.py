@@ -1,4 +1,4 @@
-import json, gzip, codecs
+import json, gzip, codecs, os, os.path
 
 def open_text_file (filename, encoding = 'latin1'):
   """open a binary file and return a readable handle.
@@ -17,3 +17,28 @@ def read_json_data (filename, **kwarg):
      the only supported kw-arg at the moment is 'encoding'
   """
   return json.load (open_text_file (filename, **kwarg))
+
+def parent_dirs (path):
+  """return the dirname of path, and its parents from bottom to up.
+     if path is a directory, returns path, too.
+  """
+  if os.path.isdir (path):
+    pdir = os.path.abspath (path)
+  else:
+    pdir = os.path.abspath (os.path.dirname (path))
+  yield pdir
+  ppdir = os.path.dirname (pdir)
+  while ppdir != pdir:
+    pdir = ppdir
+    ppdir = os.path.dirname (pdir)
+    yield pdir
+  
+def find_data_neighbor (path):
+  """given a path of a file or directory, find in the directory
+     hierarchy upwards the lowest directory named 'data'.
+  """
+  for dir in parent_dirs (path):
+    candidate = os.path.join (dir, 'data')
+    if os.path.isdir (candidate):
+      return dir
+  return None

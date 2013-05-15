@@ -30,13 +30,12 @@ class node_creator (object):
        { id, url, name, label, type }
     """
     jdata = {
-      'id': obj.name + '-g',
-      'url': self.linker.get_url (obj, 'geom'),
       'name': obj.name,
       'label': obj.name,
       'type': 'polygon_mesh'
     }
-    self.linker.add_reloc (jdata, 'url')
+    jdata['id'] = self.linker.add_id (jdata, 'id', obj, 'gref')
+    jdata['url'] = self.linker.get_ref (jdata, 'url', obj, 'geom')
     return jdata
   def create_node_instance (self, obj):
     """create an instantiated node for the object.
@@ -48,12 +47,12 @@ class node_creator (object):
     # id, url, name, label, geometry
     # geomtry: { id, url, name, label, type }
     jdata = {
-      'id': obj.name + '-n',
-      'url': self.linker.get_url (obj, 'node'),
       'name': obj.name,
       'label': obj.name,
       'geometries': [ self.get_geometries (obj) ],
       'rotation': self.get_pose_rot (obj),
       'translation': self.get_pose_trans (obj)
     }
+    jdata['id'] = self.linker.add_id (jdata, 'id', obj, 'nref')
+    jdata['url'] = self.linker.get_ref (jdata, 'url', obj, 'node')
     return jdata
