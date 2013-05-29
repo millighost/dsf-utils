@@ -33,6 +33,14 @@ def parent_dirs (path):
     ppdir = os.path.dirname (pdir)
     yield pdir
   
+def write_json_data (jdata, filepath, **kwarg):
+  dirname, filename = os.path.split (filepath)
+  if not os.path.isdir (dirname) and 'mkdir' in kwarg:
+    os.makedirs (dirname)
+  ofh = open (filepath, 'w')
+  json.dump (jdata, ofh, indent = 2)
+  ofh.close ()
+                         
 def find_data_neighbor (path):
   """given a path of a file or directory, find in the directory
      hierarchy upwards the lowest directory named 'data'.

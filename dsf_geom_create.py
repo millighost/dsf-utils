@@ -1,31 +1,34 @@
 import itertools, copy
+import math, mathutils
 
 from . import dsf_data
 
 class geom_creator (object):
   """class to create dsf-geometry items from meshes.
   """
-  def __init__ (self, linker):
+  def __init__ (self, linker, scene = None, transform = None, **kwarg):
     """create an instance. This constructor should set some default arguments.
+       scene: set to a scene object (for to_mesh); if unset only the data
+         is used.
+       transform: specify a transformation that gets applied to vertices.
     """
     self.linker = linker
-  @classmethod
+    self.scene = scene
+    self.transform = transform or mathutils.Matrix.Identity (3)
   def get_vertices (self, msh):
     """get the vertices object from the mesh.
     """
-    vs = [[v.co.x, v.co.y, v.co.z] for v in msh.vertices]
+    vs = [tuple (self.transform * v.co) for v in msh.vertices]
     jdata = {
       'count': len (vs),
       'values': vs
     }
     return jdata
-  @classmethod
-  def get_face_groups (self, obj):
+  def get_face_groups (self, obj, msh):
     """returns two objects: the polygon_groups-block of the dsf
        and a list containing the group-indices (one for each face).
        obj is the mesh object (which holds the groups).
     """
-    msh = obj.data
     def get_common_group (vidxs):
       """get the smallest group index that is a common group index of
          all vertexes whose indices are given in vidxs.
@@ -54,8 +57,7 @@ class geom_creator (object):
       'values': group_names
     }
     return (jdata, pgroups)
-  @classmethod
-  def get_face_materials (self, obj):
+  def get_face_materials (self, obj, msh):
     """returns two objects: the polygon_material_groups as an object
        and a list of material indices, one for each face.
     """
@@ -77,15 +79,20 @@ class geom_creator (object):
       'values': material_names
     }
     return (jdata, mgroups)
-  @classmethod
   def create_face_data (self, obj):
     """create the polygon data of the object.
        this returns a dictionary with the keys:
        polygon_groups, polygon_material_groups, polylist
     """
-    msh = obj.data
-    (pg_jdata, pg_idxs) = self.get_face_groups (obj)
-    (pm_jdata, pm_idxs) = self.get_face_materials (obj)
+    # todo: this needs to call to_mesh, but it needs a scene.
+    # todo: this seriously needs to handle instances
+    if self.scene:
+      msh = obj.to_mesh\
+        (self.scene, apply_modifiers = True, settings = 'PREVIEW')
+    else:
+      msh = obj.data
+    (pg_jdata, pg_idxs) = self.get_face_groups (obj, msh)
+    (pm_jdata, pm_idxs) = self.get_face_materials (obj, msh)
     assert len (pg_idxs) == len (pm_idxs) == len (msh.polygons)
     def create_poly_tuple (g, m, vs):
       return [g, m] + vs
@@ -120,11 +127,23 @@ class geom_creator (object):
     # extra (optional): geometry_channels (for subdivision)
     return jdata
 
-class node_creator (object):
-  """class to create node entries, in particular: node entries for
-     geometry objects.
+def group_objects_by_mesh (objs):
+  """group the objects by their equivalent meshes.
+     within each group objects are guaranteed to have the same mesh.
   """
-  def __init__ (self, linker):
+  dic = {}
+  for obj in objs:
+    if obj.type == 'MESH':
+      key = (obj.data, len (obj.vertex_groups), len (obj.modifiers))
+      # objects that have the same mesh, same number of vertex groups
+      # and same number of modifiers go into the same group.
+      dic.setdefault (key, []).append (obj)
+  return list (dic.values ())
+
+class node_creator (object):
+  """class to create node entries for geometry objects.
+  """
+  def __init__ (self, linker, **kwarg):
     """create an instance. This constructor should set some default arguments.
     """
     self.linker = linker
