@@ -6,13 +6,12 @@ from . import dsf_data
 class geom_creator (object):
   """class to create dsf-geometry items from meshes.
   """
-  def __init__ (self, linker, scene = None, transform = None, **kwarg):
+  def __init__ (self, scene = None, transform = None, **kwarg):
     """create an instance. This constructor should set some default arguments.
        scene: set to a scene object (for to_mesh); if unset only the data
          is used.
        transform: specify a transformation that gets applied to vertices.
     """
-    self.linker = linker
     self.scene = scene
     self.transform = transform or mathutils.Matrix.Identity (3)
   def get_vertices (self, msh):
@@ -109,7 +108,7 @@ class geom_creator (object):
       'polylist': polylist_jdata
     }
     return jdata
-  def create_geometry (self, obj):
+  def create_geometry (self, obj, id):
     """create a geometry_library entry from a mesh.
        The geometry is given a name derived from the mesh data object
        (by appending a '-mesh').
@@ -117,9 +116,9 @@ class geom_creator (object):
     """
     jdata = {
       'type': 'polygon_mesh',
-      'name': obj.data.name
+      'name': obj.data.name,
+      'id': id
     }
-    jdata['id'] = self.linker.add_id (jdata, 'id', obj, 'geom')
     jdata.update (self.create_face_data (obj))
     # required contents:
     # id, name, type, vertices, polygon_groups, polygon_material_groups,
@@ -143,11 +142,11 @@ def group_objects_by_mesh (objs):
 class node_creator (object):
   """class to create node entries for geometry objects.
   """
-  def __init__ (self, linker, **kwarg):
+  def __init__ (self, **kwarg):
     """create an instance. This constructor should set some default arguments.
     """
-    self.linker = linker
-  def create_node (self, obj):
+    pass
+  def create_node (self, obj, id):
     """create the node-library entry for the object.
        The node is given an id by appending '-node' to the meshes data name.
     """
@@ -163,10 +162,9 @@ class node_creator (object):
       'rotation_order' : rot_mode,
       'name': obj.name,
       'label': obj.name,
+      'id': id
     }
     jdata.update (dsf_data.node_entry)
-    # various names of the node
-    jdata['id'] = self.linker.add_id (jdata, 'id', obj, 'node')
     return jdata
 
 class uv_creator (object):
