@@ -74,6 +74,33 @@ def export_dsf_prop_file (context, basedir, subdir, filepath):
     (export_dic, export_scale = export_scale)
   dsf_prop_write.write_assets (jdata_dic, context.scene.dsf_asset_dir)
 
+class export_props (bpy.types.Operator):
+  """export some objects as a scene subset and a data file.
+     internal operator that has no user interface."""
+  bl_options = { 'INTERNAL' }
+  bl_idname = 'dsf.export_props'
+  bl_label = 'export dsf-props'
+  scene_path = StringProperty\
+    (name = 'scene path', description = 'file path of the scene-subset.',
+     maxlen = 1000, default = '')
+  data_path = StringProperty\
+    (name = 'scene path', description = 'file path of the data-definition.',
+     maxlen = 1000, default = '')
+  scale = FloatProperty\
+    (name = 'Scale Factor', subtype = 'FACTOR',
+     default = 1, min = 0, max = 1000, precision = 0,
+     description = 'scale to apply when using transformation')
+  def execute (self, context):
+    """export the currently selected objects to an external file.
+    """
+    scene_path = self.properties.scene_path
+    data_path = self.properties.data_path
+    scale = self.properties.scale
+    objs = get_selected_objects (context)
+    log.info ("exporting %d objects to %s/%s, scale=%f",
+              len (objs), scene_path, data_path, scale)
+    return {'FINISHED'}
+
 # the rest defines the gui and the blender operator
 class export_dsf_prop (bpy.types.Operator):
   """Export a set of objects as dsf files."""
@@ -81,7 +108,7 @@ class export_dsf_prop (bpy.types.Operator):
   # the bl_label is displayed in the operator-menu (with space-KEY).
   bl_label = 'export dsf-prop'
   # the bl_idname member is used by blender to call this class.
-  bl_idname = 'export.dsfp'
+  bl_idname = 'dsf.export_prop'
   # the filepath seems to be hidden magic; the file-selector
   # menu places the chosen filename-string into it.
   # (changes sometimes; look for path/dirname/filepath)
@@ -129,7 +156,7 @@ class dsf_prop_panel (bpy.types.Panel):
     col.prop (context.scene, 'dsf_asset_dir')
     col.prop (context.scene, 'dsf_category')
     col.prop (context.scene, 'dsf_scale')
-    col.operator ('export.dsfp')
+    col.operator ('dsf.export_prop')
 
 def register_scene_props ():
   # register scene properties:
@@ -154,6 +181,7 @@ def unregister_scene_props ():
 
 def register ():
   register_scene_props ()
+  bpy.utils.register_class (export_props)
   bpy.utils.register_class (export_dsf_prop)
   bpy.utils.register_class (dsf_prop_panel)
 
@@ -161,3 +189,4 @@ def unregister ():
   unregister_scene_props ()
   bpy.utils.unregister_class (dsf_prop_panel)
   bpy.utils.unregister_class (export_dsf_prop)
+  bpy.utils.unregister_class (export_props)

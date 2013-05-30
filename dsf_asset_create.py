@@ -3,8 +3,8 @@ from datetime import datetime
 class asset_creator (object):
   """create asset infos.
   """
-  def __init__ (self, linker):
-    self.linker = linker
+  def __init__ (self):
+    pass
   @classmethod
   def create_asset_info (self, datapath, type = 'prop'):
     """create an assetinfo object.

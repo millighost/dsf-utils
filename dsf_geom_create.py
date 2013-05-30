@@ -117,9 +117,9 @@ class geom_creator (object):
     jdata = {
       'type': 'polygon_mesh',
       'name': obj.data.name,
-      'id': id
     }
     jdata.update (self.create_face_data (obj))
+    jdata.update ({ 'id': id })
     # required contents:
     # id, name, type, vertices, polygon_groups, polygon_material_groups,
     # polylist, default_uv_set (if available),
@@ -162,15 +162,15 @@ class node_creator (object):
       'rotation_order' : rot_mode,
       'name': obj.name,
       'label': obj.name,
-      'id': id
     }
     jdata.update (dsf_data.node_entry)
+    jdata.update ({'id': id})
     return jdata
 
 class uv_creator (object):
   """create uv library entries.
   """
-  def __init__ (self, linker):
+  def __init__ (self):
     self.linker = linker
   def create_uv (self, obj):
     pass
