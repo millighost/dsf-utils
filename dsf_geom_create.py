@@ -129,6 +129,7 @@ class geom_creator (object):
 def group_objects_by_mesh (objs):
   """group the objects by their equivalent meshes.
      within each group objects are guaranteed to have the same mesh.
+     returns a list of lists of objects.
   """
   dic = {}
   for obj in objs:
@@ -142,10 +143,13 @@ def group_objects_by_mesh (objs):
 class node_creator (object):
   """class to create node entries for geometry objects.
   """
-  def __init__ (self, **kwarg):
+  def __init__ (self, transform = None):
     """create an instance. This constructor should set some default arguments.
     """
-    pass
+    if transform is None:
+      self.transform = mathutils.Matrix.Identity (3)
+    else:
+      self.transform = transform
   def create_node (self, obj, id):
     """create the node-library entry for the object.
        The node is given an id by appending '-node' to the meshes data name.
@@ -158,13 +162,10 @@ class node_creator (object):
       rot_mode = 'XYZ'
     # data of a node-lib entry without the channels.
     # the channels are pulled from the template.
-    jdata = {
-      'rotation_order' : rot_mode,
-      'name': obj.name,
-      'label': obj.name,
-    }
+    jdata = { }
     jdata.update (dsf_data.node_entry)
-    jdata.update ({'id': id})
+    jdata.update ({ 'rotation_order': rot_mode })
+    jdata.update ({'id': id, 'name': obj.name, 'label': obj.name })
     return jdata
 
 class uv_creator (object):

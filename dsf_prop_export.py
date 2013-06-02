@@ -4,6 +4,8 @@ import bpy
 from bpy.props import StringProperty
 from bpy.props import BoolProperty
 from bpy.props import FloatProperty
+
+from . import dsf_prop_create
 from . import dsf_geom_create
 from . import dsf_prop_write
 
@@ -25,54 +27,9 @@ def get_selected_objects (context):
   """
   return [obj for obj in context.selected_objects if obj.type == 'MESH']
 
-def create_export_dic (context, filepath):
-  """construct asset ids for the various things exported.
-     returns a map: (type, object) -> (fileid)
-     types: {geometry, instance, uv, morph}
-  """
-  libdir = context.scene.dsf_asset_dir
-  # filepath is the filename chosen by the user.
-  # construct a filename for the data-file:
-  basename = os.path.basename (filepath)
-  (basename_base, basename_ext) = os.path.splitext (basename)
-  data_basename = basename_base + '.dsf'
-  # construct the directory where all data files go:
-  data_basedir = os.path.join ('/data', context.scene.dsf_category)
-  data_id = os.path.join (data_basedir, data_basename)
-  # if the scene is to be saved in the library, use a library-relative
-  # id for the scene, else an absolute.
-  scene_relpath = os.path.relpath (filepath, start = libdir)
-  if scene_relpath[0] not in ['/', '.']:
-    scene_id = os.path.join ('/', scene_relpath)
-  else:
-    scene_id = filepath
-    log.warn ("writing scene-files outside of library not supported.")
-  export_objs = get_selected_objects (context)
-  export_objs_grouped = dsf_geom_create.group_objects_by_mesh (export_objs)
-  export_dic = {}
-  for objs in export_objs_grouped:
-    export_dic[('geometry', objs[0])] = data_id
-    for obj in objs:
-      export_dic[('instance', obj)] = scene_id
-  return export_dic
-
 def construct_datapath (basedir, subdir, filename):
   (basename, suffix) = os.path.splitext (filename)
   return os.path.join ('/data', subdir, basename + '.dsf')
-
-def export_dsf_prop_file (context, basedir, subdir, filepath):
-  """main function for exporting a prop something.
-     Called after the user has selected some filename.
-  """
-  # basedir/data/subdir/filename: geometry file
-  # basedir/data/subdir/UV Sets: extra uvs
-  # basedir/data/subdir/Morphs: extra morphs
-  # filename: main-scene file
-  export_dic = create_export_dic (context, filepath)
-  export_scale = context.scene.dsf_scale
-  jdata_dic = dsf_prop_write.create_assets\
-    (export_dic, export_scale = export_scale)
-  dsf_prop_write.write_assets (jdata_dic, context.scene.dsf_asset_dir)
 
 class export_props (bpy.types.Operator):
   """export some objects as a scene subset and a data file.
@@ -86,6 +43,10 @@ class export_props (bpy.types.Operator):
   data_path = StringProperty\
     (name = 'scene path', description = 'file path of the data-definition.',
      maxlen = 1000, default = '')
+  base_dir = StringProperty\
+    (name = 'library directory',
+     description = 'base directory of scene and data.',
+     subtype = 'DIR_PATH', maxlen = 1000, default = '')
   scale = FloatProperty\
     (name = 'Scale Factor', subtype = 'FACTOR',
      default = 1, min = 0, max = 1000, precision = 0,
@@ -96,8 +57,13 @@ class export_props (bpy.types.Operator):
     scene_path = self.properties.scene_path
     data_path = self.properties.data_path
     scale = self.properties.scale
+    base_dir = self.properties.base_dir
     objs = get_selected_objects (context)
-    log.info ("exporting %d objects to %s/%s, scale=%f",
+    exporter = dsf_prop_create.prop_exporter\
+      (scene_path = scene_path, data_path = data_path, scale = scale,
+       base_dir = base_dir)
+    exporter.export_props (objs)
+    log.info ("export: %d objects to %s/%s, scale=%f",
               len (objs), scene_path, data_path, scale)
     return {'FINISHED'}
 
@@ -128,7 +94,9 @@ class export_dsf_prop (bpy.types.Operator):
     filename = self.properties.filepath
     base_dir = context.scene.dsf_asset_dir
     sub_dir = context.scene.dsf_category
-    export_dsf_prop_file (context, base_dir, sub_dir, filename)
+    scale = context.scene.dsf_scale
+    bpy.ops.dsf.export_props\
+      (scene_path = 'a.duf', data_path = 'b.dsf', scale = scale)
     return { 'FINISHED' }
 
   def invoke (self, context, event):
