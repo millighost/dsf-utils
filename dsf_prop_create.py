@@ -3,6 +3,7 @@ import math, mathutils, collections, logging, json, os.path
 from . import dsf_asset_create
 from . import dsf_geom_create
 from . import dsf_scene_create
+from . import dsf_io
 
 log = logging.getLogger ('prop-create')
 
@@ -84,15 +85,6 @@ class prop_exporter (object):
     }
     return jdata
 
-  @classmethod
-  def write_file (self, jdata, filepath):
-    """write the file as json data.
-    """
-    log.info ("writing to: %s", filepath)
-    ofh = open (filepath, 'w')
-    json.dump (jdata, ofh, indent = 2)
-    ofh.close ()
-
   def create_data_urls (self, id_dic):
     url_dic = {}
     for (obj, ids) in id_dic.items ():
@@ -112,7 +104,7 @@ class prop_exporter (object):
         abspath = os.path.join (base_dir, '.' + path)
       else:
         abspath = os.path.join (base_dir, path)
-      self.write_file (asset, abspath)
+      dsf_io.write_json_data (asset, abspath, mkdir = True)
 
   def export_props (self, objs):
     """export the given list of objects.

@@ -8,6 +8,7 @@ from bpy.props import FloatProperty
 from . import dsf_prop_create
 from . import dsf_geom_create
 from . import dsf_prop_write
+from . import dsf_io
 
 log = logging.getLogger ('export-prop-dsf')
 
@@ -27,10 +28,6 @@ def get_selected_objects (context):
   """
   return [obj for obj in context.selected_objects if obj.type == 'MESH']
 
-def construct_datapath (basedir, subdir, filename):
-  (basename, suffix) = os.path.splitext (filename)
-  return os.path.join ('/data', subdir, basename + '.dsf')
-
 class export_props (bpy.types.Operator):
   """export some objects as a scene subset and a data file.
      internal operator that has no user interface."""
@@ -46,7 +43,7 @@ class export_props (bpy.types.Operator):
   base_dir = StringProperty\
     (name = 'library directory',
      description = 'base directory of scene and data.',
-     subtype = 'DIR_PATH', maxlen = 1000, default = '')
+     subtype = 'DIR_PATH', maxlen = 1000)
   scale = FloatProperty\
     (name = 'Scale Factor', subtype = 'FACTOR',
      default = 1, min = 0, max = 1000, precision = 0,
@@ -58,6 +55,16 @@ class export_props (bpy.types.Operator):
     data_path = self.properties.data_path
     scale = self.properties.scale
     base_dir = self.properties.base_dir
+    if not scene_path:
+      self.report ({'ERROR'}, "scene path unset")
+      return {'CANCELLED'}
+    elif not data_path:
+      self.report ({'ERROR'}, "data path unset")
+      return {'CANCELLED'}
+    elif not base_dir:
+      self.report ({'ERROR'}, "base dir unset")
+      return {'CANCELLED'}
+      
     objs = get_selected_objects (context)
     exporter = dsf_prop_create.prop_exporter\
       (scene_path = scene_path, data_path = data_path, scale = scale,
@@ -85,27 +92,44 @@ class export_dsf_prop (bpy.types.Operator):
       (name = 'directory', description = 'directory for exporting dsf-file.',
        maxlen = 1000, default = '')
   filter_glob = StringProperty (default = '*.*')
+  def split_scene_filepath (self, filepath):
+    """split a filename into a library name and a local name."""
+    libdir = dsf_io.find_data_parent (filepath)
+    if libdir is None:
+      self.report ({'ERROR'}, "path not in library.")
+    scene_rpath = os.path.relpath (filepath, start = libdir)
+    return (libdir, scene_rpath)
+
+  def construct_data_path (self, scene_rpath, category):
+    """choose a data filename for the scene files filepath."""
+    dirname, basename = os.path.split (scene_rpath)
+    baseprefix, basesuffix = os.path.splitext (basename)
+    data_rpath = os.path.join ('data', category, baseprefix + '.dsf')
+    return data_rpath
 
   def execute (self, context):
     """display the gui and load a file. This function should be
        called after the menu entry for the file is selected."""
     # call the main import function. This function should work
     # independent of this context-manager/operator logic.
-    filename = self.properties.filepath
-    base_dir = context.scene.dsf_asset_dir
-    sub_dir = context.scene.dsf_category
+    category = context.scene.dsf_category
+    filepath = self.properties.filepath
+    (libdir, srpath) = self.split_scene_filepath (filepath)
+    drpath = self.construct_data_path (srpath, category)
+    data_rpath = os.path.join ("/", drpath)
+    scene_rpath = os.path.join ("/", srpath)
+    log.info ("libdir: %s", libdir)
+    log.info ("scene_rpath: %s", scene_rpath)
+    log.info ("data_rpath: %s", data_rpath)
     scale = context.scene.dsf_scale
-    bpy.ops.dsf.export_props\
-      (scene_path = 'a.duf', data_path = 'b.dsf', scale = scale)
+    bpy.ops.dsf.export_props (scene_path = scene_rpath,\
+      data_path = data_rpath, base_dir = libdir, scale = scale)
     return { 'FINISHED' }
 
   def invoke (self, context, event):
     """The invoke function should be called when the menu-entry for
        this operator is selected. It displays a file-selector and
        waits for execute() to be called."""
-    combined_path = os.path.join\
-      (context.scene.dsf_asset_dir, context.scene.dsf_category)
-    self.properties.directory = combined_path
     context.window_manager.fileselect_add (self)
     return {'RUNNING_MODAL'}
 
@@ -121,7 +145,6 @@ class dsf_prop_panel (bpy.types.Panel):
     layout = self.layout
     col = layout.column (align = True)
     col.label (text = "DSF Prop")
-    col.prop (context.scene, 'dsf_asset_dir')
     col.prop (context.scene, 'dsf_category')
     col.prop (context.scene, 'dsf_scale')
     col.operator ('dsf.export_prop')
@@ -130,10 +153,6 @@ def register_scene_props ():
   # register scene properties:
   # - a base directory containing the content directory
   # - subdirectory within it (creator/item)
-  bpy.types.Scene.dsf_asset_dir\
-    = StringProperty (subtype = 'DIR_PATH', name = 'Content Directory',
-                      default = '/home/rassahah/daz',
-                      description = 'Location to save DSF files to.')
   bpy.types.Scene.dsf_category\
     = StringProperty (name = 'Creator/Item',
                       default = 'test',
@@ -142,8 +161,8 @@ def register_scene_props ():
     = FloatProperty (name = 'Scale Factor', subtype = 'FACTOR',
                      default = 1, min = 0, max = 1000, precision = 0,
                      description = 'scale to apply when using transformation')
+
 def unregister_scene_props ():
-  del bpy.types.Scene.dsf_asset_dir
   del bpy.types.Scene.dsf_category
   del bpy.types.Scene.dsf_scale
 
