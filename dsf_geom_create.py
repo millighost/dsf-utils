@@ -1,7 +1,9 @@
-import itertools, copy
+import itertools, copy, logging
 import math, mathutils
 
 from . import dsf_data
+
+log = logging.getLogger ('geom-create')
 
 class geom_creator (object):
   """class to create dsf-geometry items from meshes.
@@ -60,7 +62,6 @@ class geom_creator (object):
     """returns two objects: the polygon_material_groups as an object
        and a list of material indices, one for each face.
     """
-    msh = obj.data
     def get_material_name (material):
       """get a sensible name for the material
       """
@@ -172,6 +173,17 @@ class uv_creator (object):
   """create uv library entries.
   """
   def __init__ (self):
-    self.linker = linker
-  def create_uv (self, obj):
+    pass
+  def create_uvlayer (self, msh, uv_layer):
+    uv_data = uv_layer.data
+    # list of all polygon/vertex pairs, should be the same size as the
+    # upv_pairs := list of all (uv_idx, (poly_idx, vert_idx))
+    pvs = [[(poly.index, vi) for vi in poly.vertices] for poly in msh.polygons]
+    upv_pairs = list (enumerate (itertools.chain (*pvs)))
+    assert (len (upv_pairs) == len (uv_data))
+    # (ui, (pi, vi)) in upv_pairs
+    # itertools.groupby (upv_pairs, lambda x: x[1][1])
+    return upv_pairs
+
+  def create_uv (self, obj, msh):
     pass

@@ -68,7 +68,7 @@ class export_props (bpy.types.Operator):
     objs = get_selected_objects (context)
     exporter = dsf_prop_create.prop_exporter\
       (scene_path = scene_path, data_path = data_path, scale = scale,
-       base_dir = base_dir)
+       base_dir = base_dir, scene = context.scene)
     exporter.export_props (objs)
     log.info ("export: %d objects to %s/%s, scale=%f",
               len (objs), scene_path, data_path, scale)
