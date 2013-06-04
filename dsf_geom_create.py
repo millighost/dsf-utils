@@ -174,16 +174,63 @@ class uv_creator (object):
   """
   def __init__ (self):
     pass
-  def create_uvlayer (self, msh, uv_layer):
+  def create_uvlayer (self, msh, uv_layer, id):
+    """create a single uv-library entry for the given uv-layer.
+    """
     uv_data = uv_layer.data
     # list of all polygon/vertex pairs, should be the same size as the
     # upv_pairs := list of all (uv_idx, (poly_idx, vert_idx))
     pvs = [[(poly.index, vi) for vi in poly.vertices] for poly in msh.polygons]
     upv_pairs = list (enumerate (itertools.chain (*pvs)))
     assert (len (upv_pairs) == len (uv_data))
-    # (ui, (pi, vi)) in upv_pairs
-    # itertools.groupby (upv_pairs, lambda x: x[1][1])
-    return upv_pairs
-
+    # sort by vertex number
+    upv_pairs.sort (key = lambda x: x[1][1])
+    uvs = []
+    tail = []
+    d = {}
+    for (v, upvs) in itertools.groupby (upv_pairs, lambda x: x[1][1]):
+      # generate a list for the vertex v, containing each adjacent face
+      # along with the corresponding uv coordinate:
+      v_uvs = [(uv_data[u].uv, p) for (u, (p, v)) in upvs]
+      # sort the list by uv-coordinates
+      v_uvs.sort (key = lambda x: x[0])
+      # create a mapping giving the list of polygons for a uv-coordinate
+      # uv_p contains a list of tuples: (uv-coord, list of polygons)
+      uv_p = [(uv, [p for (uv, p) in ups])
+              for (uv, ups) in itertools.groupby (v_uvs, lambda x: x[0])]
+      # sort this list by the number of polygons
+      uv_p.sort (key = lambda x: len (x[1]))
+      (last_uv, last_ps) = uv_p.pop ()
+      uvs.append (tuple (last_uv))
+      tail.extend (itertools.chain
+                   (*[[(uv, (v, p)) for p in ps] for (uv, ps) in uv_p]))
+    assert (len (uvs) == len (msh.vertices))
+    polygon_vertex_indices = []
+    uv_index = len (uvs)
+    for (uv, uvps) in itertools.groupby (tail, lambda x: x[0]):
+      uvs.append (tuple (uv))
+      for (uv, (v, p)) in uvps:
+        polygon_vertex_indices.append ((p, v, uv_index))
+      uv_index += 1
+    uv_lib = {
+      'id': id,
+      'label': uv_layer.name,
+      'vertex_count': len (msh.vertices),
+      'uvs': {
+        'count': len (uvs),
+        'values': uvs,
+      },
+      'polygon_vertex_indices': polygon_vertex_indices,
+    }
+    return uv_lib
   def create_uv (self, obj, msh):
-    pass
+    # get all layers
+    layers = list (msh.uv_layers)
+    # make the active layer the first one.
+    layers.sort (key = lambda x: x != msh.uv_layers.active)
+    # create uv lib entries for the uv layers.
+    jdata = []
+    for uvl in layers:
+      uvlib = self.create_uvlayer (msh, uvl, uvl.name)
+      jdata.append (uvlib)
+    return jdata
