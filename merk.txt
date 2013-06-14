@@ -1,0 +1,30 @@
+User selects some items
+
+instances:
+  { bpy-obj -> (id, geometry-id, node-id)
+
+geometries:
+  { bpy-obj -> id }
+nodes:
+  { bpy-obj -> id }
+
+exporting props orientation preserving:
+  - convert the vertex data by rotating -90deg
+  - use an origin rotated by 90deg
+  - rotation pose stays same
+  - translation pose needs to swap
+  - scale pose stays same
+
+create a plan:
+  start:
+    list of objects -> scene-subset
+      object links to 1 mesh
+      object links to 1 node
+      object has pose
+    list of meshes (geometries) -> data-file
+      mesh has name
+      mesh has uvs
+    list of mesh-nodes -> data-file
+      node has name
+    list of uvs -> data-file
+      uvset has name
