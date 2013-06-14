@@ -1,4 +1,4 @@
-import json
+import json, mathutils
 from array import array
 
 class dsf_geom_load (object):
@@ -13,7 +13,6 @@ class dsf_geom_load (object):
         v=vertices, f=faces
         g=group-indices, m=material-indices,
         gm=group-names, m=material-names
-    
     """
     id = jdata['id']
     v = array ('f')
@@ -30,23 +29,33 @@ class dsf_geom_load (object):
       m.append (midx)
       g.append (gidx)
     return {
-      'v': v, 'g': g, 'm': m, 'f': f,
-      'gm': group_list, 'mm': mat_list
+      'v': v,
+      'g': g,
+      'm': m,
+      'f': f,
+      'gm': group_list,
+      'mm': mat_list
     }
 
   @classmethod
-  def intern_geometry_library (self, jdata, feats = ['vt', 'g', 'm']):
+  def intern_geometry_library (self, jdata):
     """load all geometries from the geometry_library (must be a list).
        returns a list of all geometries.
     """
     return [self.intern_geometry (gitem) for gitem in jdata]
 
   @classmethod
-  def load_geometry (self, filename, feats = ['vt', 'g', 'm']):
-    """create a model from the json-data in jdata.
-       g - include face-groups
-       m - include materials
-    """
+  def load_node_lib_entry (self, jdata):
+    """get a node library entry."""
+    return jdata
+
+  @classmethod
+  def load_node_lib (self, jdata):
+    return [self.load_node_lib_entry (jd) for jd in jdata]
+
+  @classmethod
+  def load_geometry (self, filename):
+    """create a model from the json-data in jdata."""
     from . import dsf_io
     jdata = dsf_io.read_json_data (filename, encoding = 'latin1')
     geo_lib = self.intern_geometry_library (jdata['geometry_library'])

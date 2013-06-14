@@ -12,8 +12,7 @@ import os.path, itertools
 # object-inst:
 #   "dsf-name": name of the object in the scene-subset
 #   "blender-name": name of the object in blender.
-#   "geometry-id": name of the geometry to use
-#   "node-id": name of the node to use
+#   "geometry': geometry record to use (node + geometry).
 #   "uvs": name of the uvs (first is default/active).
 # modifier-data:
 #
@@ -53,6 +52,21 @@ def get_geom_for_object (obj):
   }
   return geom_rec
 
+def get_instances (group_dic):
+  insts = []
+  for (cand, objs) in group_dic.items ():
+    geom_rec = get_geom_for_object (cand)
+    uvs_recs = get_uvs_for_object (cand)
+    for obj in objs:
+      inst_rec = {
+        'dsf_name': obj.name,
+        'blender_name': obj.name,
+        'geometry': geom_rec,
+        'uvs': uvs_recs,
+      }
+      insts.append (inst_rec)
+  return insts
+        
 def group_objects_by_mesh (objs):
   """group the objects by their equivalent meshes.
      within each group objects are guaranteed to have the same mesh.
