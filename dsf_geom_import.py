@@ -6,7 +6,7 @@ from bpy.props import BoolProperty, StringProperty
 from .dsf_geom_load import dsf_geom_load
 from .dsf_geom_define import dsf_geom_define
 
-log = logging.getLogger ('mesh_import_dsf')
+log = logging.getLogger ('dsf_mesh_import')
 
 bl_info = {
   'name': 'import dsf-geom',
@@ -51,7 +51,10 @@ def import_dsf_file (filename, props):
   # parse the dsf-file.
   geom = dsf_geom_load.load_file (filename)
   # insert the quad-model into blender.
-  obj = dsf_geom_define.define_model (geom, use_mat = 'use_mat' in props)
+  log.info ("import_dsf_file (props = %s)" % (str (props)))
+  obj = dsf_geom_define.define_model\
+        (geom, use_mat = 'use_mat' in props, define_groups = props['groups'])
+  obj['dsf-path'] = filename
   return obj
 
 # the rest defines the gui and the blender operator
@@ -97,7 +100,8 @@ class import_dsf (bpy.types.Operator):
                 (self.properties.filepath, str (import_props)))
     # call the main import function. This function should work
     # independent of this context-manager/operator logic.
-    import_dsf_file (self.properties.filepath, import_props)
+    obj = import_dsf_file (self.properties.filepath, import_props)
+    context.scene.objects.active = obj
     return { 'FINISHED' }
   def invoke (self, context, event):
     """The invoke function should be called when the menu-entry for

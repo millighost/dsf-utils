@@ -28,6 +28,9 @@ class import_dsf_wm (bpy.types.Operator):
   merge = BoolProperty\
       (name = 'merge', description = 'merge the rotation axes into one.',
        default = True)
+  generic = BoolProperty\
+      (name = 'generic', description = 'use generic map.',
+       default = True)
   scale = BoolProperty\
       (name = 'scale', description = 'import scaling weights.',
        default = False)
@@ -47,9 +50,13 @@ class import_dsf_wm (bpy.types.Operator):
     log.info ("loading: %s", self.properties.filepath)
     skin = dsf_weightmap.load_skin (self.properties.filepath)
     kwarg = {
-      'merge': self.properties.merge,
-      'scale': self.properties.scale
+      'scale': self.properties.scale,
+      'local': None
     }
+    if self.properties.merge:
+      kwarg['local'] = 'merged'
+    elif self.properties.generic:
+      kwarg['local'] = 'generic'
     self.define_wm (ctx, skin, **kwarg)
     return {'FINISHED'}
   def invoke (self, ctx, event):

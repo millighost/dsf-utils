@@ -161,15 +161,17 @@ class skin (object):
         canonical_name = self.canonicalize_map_name (jname, pmap_name)
         all_map_dic[canonical_name] = pmap_group
     return all_map_dic
-  def collect_all_paint_maps (self, merge = True, scale = False):
+  def collect_all_paint_maps (self, scale = False, local = 'merged'):
     """return a dictionary containing every defined weight map in the skin.
        grouping and generation of maps depends on the kwarg:
        merge: if True, the 3 rotation axes get merged into a single map.
        scale: if True, a separate map for scaling is generated (otherwise
          no scaling information is used).
     """
-    if merge:
+    if local == 'merged':
       groups = ['xyz']
+    elif local == 'generic':
+      groups = ['n']
     else:
       groups = ['x', 'y', 'z']
     if scale:
@@ -180,7 +182,7 @@ def load_mod_lib (filepath):
   """load the dsf file and return the modifier-library.
   """
   jdata = dsf_io.read_json_data (filepath)
-  if 'node_library' in jdata:
+  if 'modifier_library' in jdata:
     # return the first modifier library.
     return jdata['modifier_library'][0]
   else:

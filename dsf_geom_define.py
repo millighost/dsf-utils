@@ -117,14 +117,14 @@ class dsf_geom_define (object):
         self.define_weight_by_name (mesh, gname, vidxs)
 
   @classmethod
-  def define_model (self,  geom, use_mat = True):
+  def define_model (self,  geom, use_mat = True, define_groups = True):
     """build a blender object from the model.
        kwarg use_mat: do not create material if already exists.
        returns the created object.
     """
     # insert the vertices and basic faces into the model.
     mesh_obj = self.define_geom ('Mesh', geom)
-    if 'g' in geom:
+    if define_groups and 'g' in geom:
       self.log.info ("define groups")
       self.define_groups (mesh_obj, geom)
     if 'm' in geom:

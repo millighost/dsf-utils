@@ -24,7 +24,9 @@ def create_object_ids (objs):
 
 def get_uvs_for_object (obj):
   """create a list of uv-information for the given object.
-     obj is a blender object (must be a mesh)."""
+     obj is a blender object (must be a mesh).
+     returns a map id->uvlib-entry
+  """
   mesh_name = obj.data.name
   layer_names = [uvl.name for uvl in obj.data.uv_layers]
   map_names = [uvt.name for uvt in obj.data.uv_textures]
@@ -89,18 +91,63 @@ def group_objects_by_mesh (objs):
   return obj_dic
 
 class planner (object):
-  def __init__ (self, **kwarg):
+  def __init__ (self, scenefile = 'test.duf', category = None, **kwarg):
+    self.scenefile = scenefile
+    self.category = category
     self.opts = kwarg
+    if self.category is None:
+      self.data_ldir = '/data'
+    else:
+      self.data_ldir = os.path.join ('/data', self.category)
+    self.data_lpath = os.path.join (self.data_ldir, "test.dsf")
+  def get_shape_keys (self, obj):
+    """return the exportable shape keys of object."""
+    if obj.data.shape_keys is None:
+      return []
+    else:
+      return [kb.name for kb in obj.data.shape_keys.key_blocks]
+  def get_uv_layers (self, obj):
+    """return the exportable uv-names of object."""
+    pass
+  def get_material_names (self, obj):
+    """return material names for the material indices of the object."""
+    index = 0
+    mats = []
+    for mat in obj.data.materials:
+      mats.append ("Material_%d" % (index))
+    return mats
+      
+  def collect_object_data1 (self, obj):
+    """return a dictionary id->info for a single object, keys:
+       geoms, uvs, nodes, mods"""
+    rec = {
+      'geoms': [obj.name +'-g'],
+      'nodes': [obj.name + '-n'],
+      # uvs are indexed by number (names based on uv_texture)
+      'uvs': [uvt.name for uvt in obj.data.uv_textures],
+      # mods are indexed by key
+      'mods': self.get_shape_keys (obj),
+      # materials are indexed by number
+      'mats': self.get_material_names (obj)
+    }
+    return rec
+  def collect_object_data (self, objs):
+    """get object data info for each object in objs (returns a dict)."""
+    od_dic = {}
+    for obj in objs:
+      od_dic[obj] = self.collect_object_data1 (obj)
+    return od_dic
   def plan (self, context):
     scene = context.scene
     objs = context.selected_objects
     # map a mesh-object to the list of object-instances:
     obj_group_dic = group_objects_by_mesh (objs)
-    # determine base directory for data files
-    data_dir = os.path.join ('/data', context.scene.dsf_category)
-    data_file = os.path.join (data_dir, 'test.dsf')
     # determining file names:
     #   scene files (per object)
     #   geometry files (per mesh)
     #   modifier files (per mesh)
     #   uvset files (per mesh)
+    return {
+      'g': obj_group_dic,
+      'dpath': self.data_lpath,
+    }

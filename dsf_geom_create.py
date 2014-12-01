@@ -10,8 +10,8 @@ class geom_creator (object):
   """
   def __init__ (self, scene = None, transform = None, **kwarg):
     """create an instance. This constructor should set some default arguments.
-       scene: set to a scene object (for to_mesh); if unset only the data
-         is used.
+       scene: set to a scene object (for to_mesh); required for applying
+        modifiers on export. If unset only the data is being used.
        transform: specify a transformation that gets applied to vertices.
     """
     self.scene = scene
@@ -82,7 +82,7 @@ class geom_creator (object):
   def create_face_data (self, obj):
     """create the polygon data of the object.
        this returns a dictionary with the keys:
-       polygon_groups, polygon_material_groups, polylist
+       polygon_groups, polygon_material_groups, polylist, vertices
     """
     # todo: this needs to call to_mesh, but it needs a scene.
     # todo: this seriously needs to handle instances
@@ -109,18 +109,13 @@ class geom_creator (object):
       'polylist': polylist_jdata
     }
     return jdata
-  def create_geometry (self, obj, id):
-    """create a geometry_library entry from a mesh.
-       The geometry is given a name derived from the mesh data object
-       (by appending a '-mesh').
-       @parameter msh a blender mesh object (e.g. created from to_mesh).
+  def create_geometry (self, obj):
+    """create a geometry_library entry from a blender object.
+       The objects data name is used for the id of the geometry.
     """
-    jdata = {
-      'type': 'polygon_mesh',
-      'name': obj.data.name,
-    }
+    jdata = self.create_face_data (obj)
     jdata.update (self.create_face_data (obj))
-    jdata.update ({ 'id': id })
+    jdata['id'] = obj.data.name
     # required contents:
     # id, name, type, vertices, polygon_groups, polygon_material_groups,
     # polylist, default_uv_set (if available),
