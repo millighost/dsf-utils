@@ -12,10 +12,19 @@ class ExportDsfProp (bpy.types.Operator):
     ('file path', description = 'file path of the .duf file')
   output_group = bpy.props.StringProperty\
     ('group', description = 'subdirectory for data directory')
+  rotate_yup = bpy.props.BoolProperty\
+    ('y-up', description = 'rotate y-axis up', default = True)
+  export_scale = bpy.props.FloatProperty\
+    ('scale', description = 'scale factor for exporting',
+     min = 1, max = 1000, soft_min = 1, soft_max = 100, default = 100)
 
   def execute (self, ctx):
     """export selected objects as dsf."""
-    dsf.prop_writer.export_prop (ctx, self.filepath, self.output_group)
+    filepath = self.filepath
+    output_group = self.output_group
+    scale = self.export_scale
+    rotate = self.rotate_yup
+    dsf.prop_writer.export_prop (ctx, filepath, output_group, scale, rotate)
     return {'FINISHED'}
 
   def invoke (self, ctx, evt):
