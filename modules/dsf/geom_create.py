@@ -1,8 +1,6 @@
 import itertools, copy, logging
 import math, mathutils
 
-from . import dsf_data
-
 log = logging.getLogger ('geom-create')
 
 class geom_creator (object):
@@ -135,34 +133,6 @@ def group_objects_by_mesh (objs):
       # and same number of modifiers go into the same group.
       dic.setdefault (key, []).append (obj)
   return list (dic.values ())
-
-class node_creator (object):
-  """class to create node entries for geometry objects.
-  """
-  def __init__ (self, transform = None):
-    """create an instance. This constructor should set some default arguments.
-    """
-    if transform is None:
-      self.transform = mathutils.Matrix.Identity (3)
-    else:
-      self.transform = transform
-  def create_node (self, obj, id):
-    """create the node-library entry for the object.
-       The node is given an id by appending '-node' to the meshes data name.
-    """
-    if len (obj.rotation_mode) == 3:
-      # euler rotation
-      rot_mode = obj.rotation_mode
-    else:
-      # other rotation mode (axis/angle or quaternion); use xyz
-      rot_mode = 'XYZ'
-    # data of a node-lib entry without the channels.
-    # the channels are pulled from the template.
-    jdata = { }
-    jdata.update (dsf_data.node_entry)
-    jdata.update ({ 'rotation_order': rot_mode })
-    jdata.update ({'id': id, 'name': obj.name, 'label': obj.name })
-    return jdata
 
 class uv_creator (object):
   """create uv library entries.

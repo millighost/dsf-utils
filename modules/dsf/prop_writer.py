@@ -1,7 +1,6 @@
 import bpy
-
 import dsf.path_util
-import dsf.dsf_geom_create
+import dsf.geom_create
 import json
 
 class prop_writer (object):
@@ -25,14 +24,14 @@ class prop_writer (object):
     """get one object for each unique data instance.
     """
     all_objs = self.get_selected_objects (scene)
-    groups = dsf.dsf_geom_create.group_objects_by_mesh (all_objs)
+    groups = dsf.geom_create.group_objects_by_mesh (all_objs)
     objs = [obj[0] for obj in groups]
     return objs
 
   @classmethod
   def create_data_file (self, ctx):
     objects = self.get_selected_objects_by_data (ctx.scene)
-    gcreator = dsf.dsf_geom_create.geom_creator (ctx.scene)
+    gcreator = dsf.geom_create.geom_creator (ctx.scene)
     geometries = [gcreator.create_geometry (obj) for obj in objects]
     data = {
       "asset_info": {},

@@ -32,9 +32,9 @@ def unregister ():
 
 def reload ():
   import imp
-  import dsf.path_util, dsf.prop_writer, dsf.dsf_geom_create
+  import dsf.path_util, dsf.prop_writer, dsf.geom_create
   imp.reload (dsf.path_util)
   imp.reload (dsf.prop_writer)
-  imp.reload (dsf.dsf_geom_create)
+  imp.reload (dsf.geom_create)
   unregister ()
   register ()
