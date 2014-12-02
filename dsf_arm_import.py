@@ -12,8 +12,13 @@ log = logging.getLogger ("dsf-arm-imp")
 def load_node_lib (filepath):
   """load the dsf file, check that there is a node lib in it and return it.
   """
+<<<<<<< HEAD
   from . import dsf_io
   jdata = dsf_io.read_json_data (filepath, encoding = 'latin1')
+=======
+  import dsf.dsf_io
+  jdata = dsf.dsf_io.read_json_data (filepath, encoding = 'latin1')
+>>>>>>> 64d1a8da577389e9f24c88afd6ababff31e37f34
   if 'node_library' in jdata:
     return jdata['node_library']
   else:
