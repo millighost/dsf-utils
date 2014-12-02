@@ -77,6 +77,13 @@ class geom_creator (object):
       'values': material_names
     }
     return (jdata, mgroups)
+  def create_polygon_data (self, msh):
+    """create the polygon vertex list. Returns a list of lists
+       where each element is a polygon (a list of vertex indices).
+    """
+    # todo: the winding of the vertices with respect to the normal must be ccw.
+    poly_vidx_list = [list (poly.vertices) for poly in msh.polygons]
+    return poly_vidx_list
   def create_face_data (self, obj):
     """create the polygon data of the object.
        this returns a dictionary with the keys:
@@ -94,10 +101,15 @@ class geom_creator (object):
     assert len (pg_idxs) == len (pm_idxs) == len (msh.polygons)
     def create_poly_tuple (g, m, vs):
       return [g, m] + vs
-    poly_vidx_list = [list (poly.vertices) for poly in msh.polygons]
+    # poly_vidx_list contains the actual polygon data.
+    # Each element of poly_vidx_list is a list of vertex-indices.
+    poly_vidx_list = self.create_polygon_data (msh)
+    # enhance each polygon with an index to the group and material.
+    gm_poly_vidx_list = list (map (create_poly_tuple,
+                                   pg_idxs, pm_idxs, poly_vidx_list))
     polylist_jdata ={
-      'count': len (msh.polygons),
-      'values': list (map (create_poly_tuple, pg_idxs, pm_idxs, poly_vidx_list))
+      'count': len (gm_poly_vidx_list),
+      'values': gm_poly_vidx_list
     }
     vertices = self.get_vertices (msh)
     jdata = {
