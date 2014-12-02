@@ -127,11 +127,10 @@ def group_objects_by_mesh (objs):
   """
   dic = {}
   for obj in objs:
-    if obj.type == 'MESH':
-      key = (obj.data, len (obj.vertex_groups), len (obj.modifiers))
-      # objects that have the same mesh, same number of vertex groups
-      # and same number of modifiers go into the same group.
-      dic.setdefault (key, []).append (obj)
+    key = (obj.data, len (obj.vertex_groups), len (obj.modifiers))
+    # objects that have the same mesh, same number of vertex groups
+    # and same number of modifiers go into the same group.
+    dic.setdefault (key, []).append (obj)
   return list (dic.values ())
 
 class uv_creator (object):

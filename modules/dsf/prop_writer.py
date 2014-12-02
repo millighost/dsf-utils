@@ -14,6 +14,7 @@ class prop_writer (object):
     self.duf_libpath = self.lib.get_libpath (filepath)
     self.dsf_libpath = self.lib.get_data_libpath (self.duf_libpath)
     self.transform = transform
+    self.transform_inv = transform.inverted ()
   @classmethod
   def get_selected_objects (self, scene):
     """return the selected objects of the scene.
@@ -40,19 +41,40 @@ class prop_writer (object):
     }
     return data
 
+  def make_rotation (self, obj):
+    mat = self.transform * obj.matrix_local * self.transform_inv
+    euler = mat.to_euler ("XYZ")
+    rotation = [
+      { "id": axis,
+        "current_value": getattr (euler, axis) * 180 / math.pi }
+      for axis in ["x", "y", "z"]
+    ]
+    return rotation
+  def make_translation (self, obj):
+    mat = self.transform * obj.matrix_local * self.transform_inv
+    pos = mat.translation
+    translation = [
+      { "id": axis,
+        "current_value": getattr (pos, axis) }
+      for axis in ["x", "y", "z"]
+    ]
+    return translation
   def create_node_ref (self, obj):
     """get the node geometry instantiation for an object.
     """
     data_name = obj.data.name
-    return {
+    data = {
       "url": self.dsf_libpath,
       "name": obj.name,
       "geometries": [
         {
           "url": "%s#%s" % (self.dsf_libpath, data_name)
         }
-      ]
+      ],
+      "rotation": self.make_rotation (obj),
+      "translation": self.make_translation (obj)
     }
+    return data
   def create_scene_file (self, ctx):
     objects = self.get_selected_objects (ctx.scene)
     scene_nodes = [self.create_node_ref (obj) for obj in objects]
@@ -88,6 +110,6 @@ def export_prop (ctx, filepath, group, scale, rotate):
      if rotate is true, rotate geometry by 90degrees around x.
   """
   transform = make_transform (scale, rotate)
-  writer = prop_writer (filepath, transform)
+  writer = prop_writer (filepath, transform.to_4x4 ())
   writer.write_scene (ctx)
 
