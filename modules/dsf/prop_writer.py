@@ -95,7 +95,7 @@ class prop_writer (object):
 
   def write_json (self, libpath, data):
     ofh = self.lib.create_output_stream (libpath)
-    json.dump (data, ofh)
+    json.dump (data, ofh, sort_keys = True)
 
   def write_scene (self, ctx):
     scene = ctx.scene
