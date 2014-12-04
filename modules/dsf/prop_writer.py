@@ -2,6 +2,7 @@ import bpy, mathutils
 
 import dsf.path_util
 import dsf.geom_create
+import dsf.scene_writer
 import json, math
 import urllib.parse as urp
 
@@ -48,60 +49,26 @@ class prop_writer (object):
     }
     return data
 
-  def make_rotation (self, obj):
-    mat = self.transform * obj.matrix_local * self.transform_inv
-    euler = mat.to_euler ("XYZ")
-    rotation = [
-      { "id": axis,
-        "current_value": getattr (euler, axis) * 180 / math.pi }
-      for axis in ["x", "y", "z"]
-    ]
-    return rotation
-  def make_translation (self, obj):
-    mat = self.transform * obj.matrix_local * self.transform_inv
-    pos = mat.translation
-    translation = [
-      { "id": axis,
-        "current_value": getattr (pos, axis) }
-      for axis in ["x", "y", "z"]
-    ]
-    return translation
-  def create_node_ref (self, obj):
-    """get the node geometry instantiation for an object.
-    """
-    data_name = obj.data.name
-    data = {
-      "url": self.dsf_libpath,
-      "name": obj.name,
-      "geometries": [
-        {
-          "url": "%s#%s" % (self.dsf_libpath, data_name)
-        }
-      ],
-      "rotation": self.make_rotation (obj),
-      "translation": self.make_translation (obj)
-    }
-    return data
-  def create_scene_file (self, ctx):
-    objects = self.get_selected_objects (ctx.scene)
-    scene_nodes = [self.create_node_ref (obj) for obj in objects]
-    data = {
-      "asset_info": {},
-      "scene": {
-        "nodes": scene_nodes
-      }
-    }
-    return data
-
   def write_json (self, libpath, data):
     ofh = self.lib.create_output_stream (libpath)
-    json.dump (data, ofh, sort_keys = True)
+    json.dump (data, ofh, indent = 2, sort_keys = True)
 
+  def build_objmap (self, objs):
+    """build the object-map, i.e. a mapping for each object to
+       its data-url.
+    """
+    objmap = {
+      obj: "%s#%s" % (self.dsf_libpath, obj.data.name)
+      for obj in objs
+    }
+    return objmap
   def write_scene (self, ctx):
     scene = ctx.scene
-    objecs = self.get_selected_objects (scene)
+    objects = self.get_selected_objects (scene)
+    objmap = self.build_objmap (objects)
+    scene_writer = dsf.scene_writer.scene_writer (self.transform, objmap)
     self.write_json (self.dsf_libpath, self.create_data_file (ctx))
-    self.write_json (self.duf_libpath, self.create_scene_file (ctx))
+    self.write_json (self.duf_libpath, scene_writer.create_scene_file (objects))
 
 def make_transform (scale, rotate):
   if rotate:
