@@ -61,7 +61,7 @@ class uv_creator (object):
       'polygon_vertex_indices': polygon_vertex_indices,
     }
     return uv_lib
-  def create_uv (self, obj, msh):
+  def create_uvs (self, obj, msh):
     # get all layers
     layers = list (msh.uv_layers)
     # make the active layer the first one.
@@ -83,7 +83,7 @@ class geom_data_creator (object):
   def get_vertices (self):
     """get the vertices object from the mesh.
     """
-    vs = [tuple (self.transform * v.co) for v in msh.vertices]
+    vs = [tuple (self.transform * v.co) for v in self.msh.vertices]
     data = {
       'count': len (vs),
       'values': vs
@@ -162,14 +162,14 @@ class geom_data_creator (object):
     """
     obj = self.obj
     msh = self.msh
-    (pg_jdata, pg_idxs) = self.get_face_groups (obj, msh)
-    (pm_jdata, pm_idxs) = self.get_face_materials (obj, msh)
+    (pg_jdata, pg_idxs) = self.get_face_groups ()
+    (pm_jdata, pm_idxs) = self.get_face_materials ()
     assert len (pg_idxs) == len (pm_idxs) == len (msh.polygons)
     def create_poly_tuple (g, m, vs):
       return [g, m] + vs
     # poly_vidx_list contains the actual polygon data.
     # Each element of poly_vidx_list is a list of vertex-indices.
-    poly_vidx_list = self.create_polygon_data (msh)
+    poly_vidx_list = self.create_polygon_data ()
     # enhance each polygon with an index to the group and material.
     gm_poly_vidx_list = list (map (create_poly_tuple,
                                    pg_idxs, pm_idxs, poly_vidx_list))
@@ -177,7 +177,7 @@ class geom_data_creator (object):
       'count': len (gm_poly_vidx_list),
       'values': gm_poly_vidx_list
     }
-    vertices = self.get_vertices (msh)
+    vertices = self.get_vertices ()
     jdata = {
       'vertices': vertices,
       'polygon_groups': pg_jdata,
@@ -185,20 +185,25 @@ class geom_data_creator (object):
       'polylist': polylist_jdata
     }
     return jdata
+  def create_uvs (self):
+    """convert the uv-layers of the object to a list of uv-library entries.
+       the id of the entries is the name of the uv-layer.
+       the active uv-layer always comes first.
+    """
+    uvcreator = uv_creator ()
+    return uvcreator.create_uvs (self.obj, self.msh)
   def create_geometry (self):
     """create a geometry_library entry from a blender object.
-       The objects data name is used for the id of the geometry.
+       The mesh name is used for the id of the geometry.
     """
-    obj =self.obj
-    jdata = self.create_face_data (obj)
-    jdata.update (self.create_face_data (obj))
+    obj = self.obj
+    jdata = self.create_face_data ()
     jdata['id'] = obj.data.name
     # required contents:
     # id, name, type, vertices, polygon_groups, polygon_material_groups,
     # polylist, default_uv_set (if available),
     # extra (optional): geometry_channels (for subdivision)
     return jdata
-
 
 class geom_creator (object):
   """class to create dsf-geometry items from meshes.
@@ -211,123 +216,19 @@ class geom_creator (object):
     """
     self.scene = scene
     self.transform = transform or mathutils.Matrix.Identity (3)
-  def get_vertices (self, msh):
-    """get the vertices object from the mesh.
+  def create_geometry_and_uvs (self, obj):
+    """create the geometry library entry and a list of uv-set-library entries.
+       Returns a geometry_data object.
     """
-    vs = [tuple (self.transform * v.co) for v in msh.vertices]
-    jdata = {
-      'count': len (vs),
-      'values': vs
-    }
-    return jdata
-  def get_face_groups (self, obj, msh):
-    """returns two objects: the polygon_groups-block of the dsf
-       and a list containing the group-indices (one for each face).
-       obj is the mesh object (which holds the groups).
-    """
-    def get_common_group (vidxs):
-      """get the smallest group index that is a common group index of
-         all vertexes whose indices are given in vidxs.
-         If there is no common index, return 0.
-      """
-      # list of group-objects, one for each vertex
-      groups = [msh.vertices[vidx].groups for vidx in vidxs]
-      # create a list of lists of group-indices
-      group_idxs = [[vg.group for vg in vgroups] for vgroups in groups]
-      # build the intersection of all groups
-      intersection = set (group_idxs.pop ())
-      for group in group_idxs:
-        intersection.intersection_update (group)
-      if len (intersection) == 0:
-        return 0
-      else:
-        return min (intersection)
-    # pgroups is the list of group indices to use, one for each face.
-    pgroups = [get_common_group (poly.vertices) for poly in msh.polygons]
-    if len (obj.vertex_groups) == 0:
-      group_names = ['default']
-    else:
-      group_names = [group.name for group in obj.vertex_groups]
-    jdata = {
-      'count': len (obj.vertex_groups),
-      'values': group_names
-    }
-    return (jdata, pgroups)
-  def get_face_materials (self, obj, msh):
-    """returns two objects: the polygon_material_groups as an object
-       and a list of material indices, one for each face.
-    """
-    def get_material_name (material):
-      """get a sensible name for the material
-      """
-      if material is None:
-        return 'default'
-      else:
-        return material.name
-    mgroups = [poly.material_index for poly in msh.polygons]
-    if len (msh.materials) == 0:
-      material_names = ['default']
-    else:
-      material_names = [get_material_name (mat) for mat in msh.materials]
-    jdata = {
-      'count': len (material_names),
-      'values': material_names
-    }
-    return (jdata, mgroups)
-  def create_polygon_data (self, msh):
-    """create the polygon vertex list. Returns a list of lists
-       where each element is a polygon (a list of vertex indices).
-    """
-    # todo: the winding of the vertices with respect to the normal must be ccw.
-    poly_vidx_list = [list (poly.vertices) for poly in msh.polygons]
-    return poly_vidx_list
-  def create_face_data (self, obj):
-    """create the polygon data of the object.
-       this returns a dictionary with the keys:
-       polygon_groups, polygon_material_groups, polylist, vertices
-    """
-    # todo: this needs to call to_mesh, but it needs a scene.
-    # todo: this seriously needs to handle instances
     if self.scene:
       msh = obj.to_mesh\
         (self.scene, apply_modifiers = True, settings = 'PREVIEW')
     else:
       msh = obj.data
-    (pg_jdata, pg_idxs) = self.get_face_groups (obj, msh)
-    (pm_jdata, pm_idxs) = self.get_face_materials (obj, msh)
-    assert len (pg_idxs) == len (pm_idxs) == len (msh.polygons)
-    def create_poly_tuple (g, m, vs):
-      return [g, m] + vs
-    # poly_vidx_list contains the actual polygon data.
-    # Each element of poly_vidx_list is a list of vertex-indices.
-    poly_vidx_list = self.create_polygon_data (msh)
-    # enhance each polygon with an index to the group and material.
-    gm_poly_vidx_list = list (map (create_poly_tuple,
-                                   pg_idxs, pm_idxs, poly_vidx_list))
-    polylist_jdata ={
-      'count': len (gm_poly_vidx_list),
-      'values': gm_poly_vidx_list
-    }
-    vertices = self.get_vertices (msh)
-    jdata = {
-      'vertices': vertices,
-      'polygon_groups': pg_jdata,
-      'polygon_material_groups': pm_jdata,
-      'polylist': polylist_jdata
-    }
-    return jdata
-  def create_geometry (self, obj):
-    """create a geometry_library entry from a blender object.
-       The objects data name is used for the id of the geometry.
-    """
-    jdata = self.create_face_data (obj)
-    jdata.update (self.create_face_data (obj))
-    jdata['id'] = obj.data.name
-    # required contents:
-    # id, name, type, vertices, polygon_groups, polygon_material_groups,
-    # polylist, default_uv_set (if available),
-    # extra (optional): geometry_channels (for subdivision)
-    return jdata
+    gdcreator = geom_data_creator (obj, msh, self.transform)
+    geometry_entry = gdcreator.create_geometry ()
+    uvset_entries = gdcreator.create_uvs ()
+    return geometry_data (geometry_entry, uvset_entries)
 
 def group_objects_by_mesh (objs):
   """group the objects by their equivalent meshes.

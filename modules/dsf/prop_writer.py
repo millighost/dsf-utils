@@ -3,6 +3,7 @@ import bpy, mathutils
 import dsf.path_util
 import dsf.geom_create
 import json, math
+import urllib.parse as urp
 
 class prop_writer (object):
   """write props for a single export-operation.
@@ -34,10 +35,16 @@ class prop_writer (object):
   def create_data_file (self, ctx):
     objects = self.get_selected_objects_by_data (ctx.scene)
     gcreator = dsf.geom_create.geom_creator (ctx.scene, self.transform)
-    geometries = [gcreator.create_geometry (obj) for obj in objects]
+    geometry_datas = [gcreator.create_geometry_and_uvs (obj) for obj in objects]
+    for gdata in geometry_datas:
+      geo = gdata.geometry
+      uvs = gdata.uvs
+      if uvs:
+        geo['default_uv_set'] = '#' + urp.quote (uvs[0]['id'])
     data = {
       "asset_info": {},
-      "geometry_library": geometries
+      "geometry_library": [g.geometry for g in geometry_datas],
+      "uv_set_library": sum ([g.uvs for g in geometry_datas], [])
     }
     return data
 
