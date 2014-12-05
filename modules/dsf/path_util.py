@@ -33,6 +33,15 @@ class daz_library (object):
     relpath = os.path.relpath (abspath, self.libdir)
     return os.sep + relpath
 
+  def write_geometry_data (self, id, data):
+    """create a file in the library containing geometry definitions for
+       a geometry with id.
+       Returns the created relative filepath.
+    """
+    filename = id + '.dsf'
+    file_libpath = os.path.join ('/data', filename)
+    return file_libpath
+
   @classmethod
   def get_data_filename (self, libpath, group = None):
     """get a dsf-filename for a duf-filename."""

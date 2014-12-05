@@ -2,6 +2,7 @@ import bpy, mathutils
 
 import dsf.path_util
 import dsf.geom_create
+import dsf.geom_writer
 import dsf.scene_writer
 import json, math
 import urllib.parse as urp

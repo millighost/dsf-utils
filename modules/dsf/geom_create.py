@@ -208,31 +208,22 @@ class geom_data_creator (object):
 class geom_creator (object):
   """class to create dsf-geometry items from meshes.
   """
-  def __init__ (self, scene = None, transform = None, **kwarg):
-    """create an instance. This constructor should set some default arguments.
-       scene: set to a scene object (for to_mesh); required for applying
-        modifiers on export. If unset only the data is being used.
-       transform: specify a transformation that gets applied to vertices.
+  def __init__ (self, transform = None, **kwarg):
+    """using transform to transform vertices.
     """
-    self.scene = scene
     self.transform = transform or mathutils.Matrix.Identity (3)
-  def create_geometry_and_uvs (self, obj):
+  def create_geometry_and_uvs (self, obj, msh):
     """create the geometry library entry and a list of uv-set-library entries.
        Returns a geometry_data object.
     """
-    if self.scene:
-      msh = obj.to_mesh\
-        (self.scene, apply_modifiers = True, settings = 'PREVIEW')
-    else:
-      msh = obj.data
     gdcreator = geom_data_creator (obj, msh, self.transform)
     geometry_entry = gdcreator.create_geometry ()
     uvset_entries = gdcreator.create_uvs ()
     return geometry_data (geometry_entry, uvset_entries)
 
-def group_objects_by_mesh (objs):
-  """group the objects by their equivalent meshes.
-     within each group objects are guaranteed to have the same mesh.
+def group_objects_by_data (objs):
+  """group the objects by their data.
+     within each group objects are guaranteed to have the same data.
      returns a list of lists of objects.
   """
   dic = {}
