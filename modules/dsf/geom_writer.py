@@ -7,7 +7,8 @@ class geom_writer (object):
      also writes uvs.
   """
   def __init__ (self, lib, scene, transform):
-    """scene: used for applying modifiers.
+    """lib: used for creating actual files.
+       scene: used for applying modifiers.
        transform: applied to vertices.
     """
     self.lib = lib

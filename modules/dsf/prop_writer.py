@@ -10,14 +10,13 @@ import urllib.parse as urp
 class prop_writer (object):
   """write props for a single export-operation.
   """
-  def __init__ (self, filepath, transform):
+  def __init__ (self, filepath, transform, scene):
     """initialize state for writing to the given scene-file.
     """
     self.lib = dsf.path_util.daz_library (filepath = filepath)
+    self.scene = scene
     self.duf_libpath = self.lib.get_libpath (filepath)
-    self.dsf_libpath = self.lib.get_data_libpath (self.duf_libpath)
     self.transform = transform
-    self.transform_inv = transform.inverted ()
   @classmethod
   def get_selected_objects (self, scene):
     """return the selected objects of the scene.
@@ -54,29 +53,37 @@ class prop_writer (object):
     ofh = self.lib.create_output_stream (libpath)
     json.dump (data, ofh, indent = 2, sort_keys = True)
 
-  def build_objmap (self, objs):
-    """build the object-map, i.e. a mapping for each object to
-       its data-url.
+  def write_geometries (self, objs):
+    """write the geometry definitions for the given objects.
+       returns a mapping from obj-data to url.
     """
-    objmap = {
-      obj: "%s#%s" % (self.dsf_libpath, obj.data.name)
-      for obj in objs
-    }
-    return objmap
+    geom_writer = dsf.geom_writer.geom_writer\
+      (self.lib, self.scene, self.transform)
+    data_dic = geom_writer.write_meshes_for_objects (objs)
+    return data_dic
+
+  def write_objects (self, objs, data_dic):
+    """write the scene-file.
+       data-dic contains a mapping from object data to url.
+    """
+    scene_writer = dsf.scene_writer.scene_writer (self.transform, data_dic)
+    data = scene_writer.create_scene_file (objs)
+    self.lib.write_local_file (data, self.duf_libpath)
+
   def write_scene (self, ctx):
+    """write the scene file and all geometry files.
+    """
     scene = ctx.scene
-    objects = self.get_selected_objects (scene)
-    objmap = self.build_objmap (objects)
-    scene_writer = dsf.scene_writer.scene_writer (self.transform, objmap)
-    self.write_json (self.dsf_libpath, self.create_data_file (ctx))
-    self.write_json (self.duf_libpath, scene_writer.create_scene_file (objects))
+    objs = self.get_selected_objects (self.scene)
+    data_dic = self.write_geometries (objs)
+    self.write_objects (objs, data_dic)
 
 def make_transform (scale, rotate):
   if rotate:
     trans = scale * mathutils.Euler ([-math.pi/2, 0, 0], 'XYZ').to_matrix ()
   else:
     trans = scale * mathutils.Matrix.Identity (3)
-  return trans
+  return trans.to_4x4 ()
 
 def export_prop (ctx, filepath, group, scale, rotate):
   """export the active object to the filepath.
@@ -84,7 +91,7 @@ def export_prop (ctx, filepath, group, scale, rotate):
      scale is a scale factor that is applied to exported objects.
      if rotate is true, rotate geometry by 90degrees around x.
   """
+  scene = ctx.scene
   transform = make_transform (scale, rotate)
-  writer = prop_writer (filepath, transform.to_4x4 ())
+  writer = prop_writer (filepath, transform, scene)
   writer.write_scene (ctx)
-

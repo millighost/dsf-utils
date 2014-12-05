@@ -1,10 +1,13 @@
-import os.path, os
+import os.path, os, json
 
 def find_libdir_head (filepath):
   """get the root of the library directory (directory that contains data).
-     filepath is a filename with in the library
+     filepath is a filename with in the library or a directory.
   """
-  path, base = os.path.split (filepath)
+  if os.path.isdir (filepath):
+    path, base = filepath, ''
+  else:
+    path, base = os.path.split (filepath)
   while len (base) > 0:
     data_neighbor = os.path.join (path, 'data')
     if os.path.isdir (data_neighbor):
@@ -15,13 +18,12 @@ def find_libdir_head (filepath):
 class daz_library (object):
   """class to manage some files within a daz library.
   """
-  def __init__ (self, libdir = None, filepath = None):
+  def __init__ (self, filepath = None, group = ''):
     """initialize with a file within the library.
     """
-    if libdir:
-      self.libdir = libdir
-    elif filepath:
-      self.libdir = find_libdir_head (filepath)
+    self.indent = 2
+    self.libdir = find_libdir_head (filepath)
+    self.group = group
   def get_abspath (self, libpath):
     """get the absolute filesystem path for a file within the library.
     """
@@ -32,30 +34,10 @@ class daz_library (object):
     """
     relpath = os.path.relpath (abspath, self.libdir)
     return os.sep + relpath
-
-  def write_geometry_data (self, id, data):
-    """create a file in the library containing geometry definitions for
-       a geometry with id.
-       Returns the created relative filepath.
+  def get_data_libpath (self, id):
+    """return a libpath for the given id.
     """
-    filename = id + '.dsf'
-    file_libpath = os.path.join ('/data', filename)
-    return file_libpath
-
-  @classmethod
-  def get_data_filename (self, libpath, group = None):
-    """get a dsf-filename for a duf-filename."""
-    base, ext = os.path.splitext (os.path.basename (libpath).lower ())
-    return base + '.dsf'
-  def get_data_libpath (self, libpath, group = None):
-    """for the filepath get an associated filepath for the data file.
-    """
-    if not group:
-      subdir = ''
-    else:
-      subdir = group
-    filename = self.get_data_filename (libpath)
-    return os.path.join ('/data', subdir, filename)
+    return os.path.join ('/data', self.group, id + '.dsf')
   def create_output_stream (self, libpath):
     """open a file for output in the library, creating intermediate directories
        if necessary.
@@ -63,3 +45,19 @@ class daz_library (object):
     abspath = self.get_abspath (libpath)
     ofh = open (abspath, 'w')
     return ofh
+  def write_local_file (self, data, libpath):
+    """write an object to the local libpath.
+    """
+    ofh = self.create_output_stream (libpath)
+    json.dump (data, ofh, indent = self.indent, sort_keys = True)
+    ofh.close ()
+    return libpath
+  def write_geometry_data (self, id, data):
+    """create a file in the library containing geometry definitions for
+       a geometry with id.
+       Returns the created relative filepath.
+    """
+    libpath = self.get_data_libpath (id)
+    self.write_local_file (data, libpath)
+    return libpath
+

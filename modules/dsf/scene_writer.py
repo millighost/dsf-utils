@@ -16,7 +16,7 @@ class scene_writer (object):
   def create_node_ref (self, obj):
     """get the node geometry instantiation for an object.
     """
-    data_name = self.objmap[obj]
+    data_name = self.objmap[obj.data]
     data = {
       "url": data_name,
       "name": obj.name,
